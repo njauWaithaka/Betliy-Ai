@@ -1,0 +1,105 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (Firebase Auth UID)
+    // Fields:
+    //   - uid: string (required) - Firebase Auth UID
+    //   - name: string (required) - Display name
+    //   - email: string (optional) - Email address
+    //   - photoUrl: string (optional) - Profile photo URL
+    //   - isPremium: boolean (optional) - Subscription status
+    //   - role: string (optional) - 'user' or 'admin'
+    //   - provider: string (optional) - 'google', 'telegram', 'email'
+    //   - telegramId: number/string (optional) - Telegram user ID
+    //   - createdAt: timestamp (optional) - Account creation time
+    //   - updatedAt: timestamp (optional) - Last update time
+    //
+    // Collection: subscriptions
+    // Document ID: subscriptionId
+    // Fields:
+    //   - userId: string (required) - Owner UID
+    //   - status: string (required) - 'active', 'expired', 'canceled'
+    //   - planId: string (required) - Plan identifier
+    //   - expiresAt: timestamp (optional) - Expiration time
+    //
+    // Collection: telegramusers
+    // Document ID: userId (Firebase Auth UID)
+    // Fields:
+    //   - id: number (required) - Telegram user ID
+    //   - firstName: string (required) - Telegram user first name
+    //   - lastName: string (optional) - Telegram user last name
+    //   - username: string (optional) - Telegram username
+    //   - languageCode: string (optional) - Telegram user language code
+    //   - isPremium: boolean (optional) - Whether the user has Telegram Premium
+    //   - addedToAttachmentMenu: boolean (optional) - Whether the user added the bot to the attachment menu
+    //   - allowsWriteToPm: boolean (optional) - Whether the user allows the bot to write to PM
+    //   - photoUrl: string (optional) - Profile photo URL
+    //   - lastSeen: timestamp (optional) - Last seen time
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "njaualex20@gmail.com" && request.auth.token.email_verified == true) ||
+         (request.auth.token.email == "admin@betlify.ai" && request.auth.token.email_verified == true));
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'name']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             (!('email' in data) || (data.email is string && data.email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")));
+    }
+
+    function isValidSubscription(data) {
+      return data.keys().hasAll(['userId', 'status', 'planId']) &&
+             data.userId is string &&
+             data.status in ['active', 'expired', 'canceled'] &&
+             data.planId is string;
+    }
+
+    function isValidTelegramUser(data) {
+      return data.keys().hasAll(['id', 'firstName']) &&
+             data.id is number &&
+             data.firstName is string && data.firstName.size() > 0 && data.firstName.size() < 100 &&
+             (!('lastName' in data) || (data.lastName is string && data.lastName.size() < 100)) &&
+             (!('username' in data) || (data.username is string && data.username.size() < 100)) &&
+             (!('languageCode' in data) || (data.languageCode is string && data.languageCode.size() < 10)) &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() < 500));
+    }
+
+    // ===============================================================
+    // Match Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    match /subscriptions/{subscriptionId} {
+      allow read, write: if true;
+    }
+
+    match /telegramusers/{userId} {
+      allow read, write: if true;
+    }
+  }
+}

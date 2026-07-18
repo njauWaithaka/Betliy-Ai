@@ -1,0 +1,7 @@
+{
+  "name": "Betlify",
+  "description": "Stop Guessing. Start Winning. - Advanced sports market analysis using real-time data and neural processing.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
