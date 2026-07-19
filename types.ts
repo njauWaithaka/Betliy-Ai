@@ -68,6 +68,8 @@ export interface EliteComboPick {
   riskLevel: 'Low' | 'Medium' | 'High';
   tipType: string;
   analysis?: string;
+  locked?: boolean;
+  time?: string;
 }
 
 export interface FirebasePick {
@@ -82,6 +84,8 @@ export interface FirebasePick {
   aiConfidence?: number;
   match?: string;
   kickoff?: string;
+  locked?: boolean;
+  time?: string;
   homeLogo?: string;
   awayLogo?: string;
   homeTeamLogoUrl?: string;

@@ -85,7 +85,7 @@ const mapRawPick = (p: any, defaultLeague = 'Elite Pro', defaultDate = '', packa
 
 export const fetchBOD = async (): Promise<FirebasePick[]> => {
   try {
-    const bodRef = ref(bettipsDb, 'betrix/bod');
+    const bodRef = ref(betrixDb, 'Bets/Bo');
     const snapshot = await get(bodRef);
     const data = snapshot.exists() ? snapshot.val() : null;
     if (!data) return [];
@@ -99,7 +99,7 @@ export const fetchBOD = async (): Promise<FirebasePick[]> => {
 
 export const fetchDailyBanker = async (): Promise<FirebasePick[]> => {
   try {
-    const bankerRef = ref(bettipsDb, 'betrix/dailybanker');
+    const bankerRef = ref(betrixDb, 'Bets/Banker');
     const snapshot = await get(bankerRef);
     const data = snapshot.exists() ? snapshot.val() : null;
     if (!data) return [];
@@ -113,7 +113,7 @@ export const fetchDailyBanker = async (): Promise<FirebasePick[]> => {
 
 export const fetchTopPicks = async (): Promise<FirebasePick[]> => {
   try {
-    const topPicksRef = ref(bettipsDb, 'betrix/topPicks');
+    const topPicksRef = ref(betrixDb, 'Bets/Verified');
     const snapshot = await get(topPicksRef);
     const data = snapshot.exists() ? snapshot.val() : null;
     if (!data) return [];
@@ -254,18 +254,17 @@ export const fetchPremiumHistory = async (limit: number = 20): Promise<FirebaseP
 
 export const fetchEliteCombo = async (): Promise<EliteComboPick[]> => {
   try {
-    const eliteComboRef = ref(bettipsDb, 'betrix/EliteCombo');
+    const eliteComboRef = ref(betrixDb, 'Bets/EliteCombo');
     const snapshot = await get(eliteComboRef);
     const data = snapshot.exists() ? snapshot.val() : null;
     
     if (!data) return [];
     
-    // Convert object to array and filter by tipType
+    // Convert object to array and filter
     const rawPicks: any[] = Object.values(data);
     const filteredPicks = rawPicks.filter(p => 
       p && 
       typeof p === 'object' && 
-      p.tipType === 'elite_combo' && 
       (p.odds !== undefined && p.odds !== null)
     );
 
@@ -536,3 +535,267 @@ OUTPUT FORMAT (EXACT STRUCTURE):
     throw new Error(`Neural Link Failed: ${error.message || "Unknown internal error"}`);
   }
 };
+
+export interface BetsDataOutput {
+  bet_of_the_day: {
+    display: any[];
+    history: any[];
+  };
+  verified: {
+    display: any[];
+    history: any[];
+  };
+  elite_combo: {
+    display: any[];
+    history: any[];
+  };
+  free: {
+    display: any[];
+    history: any[];
+  };
+}
+
+export function processBet(bet: any, isPremium: boolean, mode: "display" | "history"): any {
+  if (!bet) return null;
+  const cloned = JSON.parse(JSON.stringify(bet));
+  
+  // Normalize names
+  cloned.homeTeam = cloned.homeTeam || cloned.home || 'Unknown';
+  cloned.awayTeam = cloned.awayTeam || cloned.away || 'Unknown';
+  cloned.home = cloned.home || cloned.homeTeam || 'Unknown';
+  cloned.away = cloned.away || cloned.awayTeam || 'Unknown';
+  cloned.time = cloned.time || cloned.kickoff || '';
+  cloned.kickoff = cloned.kickoff || cloned.time || '';
+
+  // 🔥 STATUS RULE (MANDATORY)
+  let finalStatus = cloned.status || 'pending';
+  if (!cloned.free && !cloned.premium) {
+    finalStatus = cloned.status || 'pending';
+  } else {
+    if (isPremium) {
+      finalStatus = cloned.premium?.status || 'pending';
+    } else {
+      finalStatus = cloned.free?.status || 'pending';
+    }
+  }
+  cloned.status = finalStatus;
+
+  if (mode === "display") {
+    if (isPremium) {
+      delete cloned.free;
+      return { ...cloned, locked: false };
+    } else {
+      delete cloned.free;
+      return {
+        homeTeam: cloned.homeTeam,
+        awayTeam: cloned.awayTeam,
+        home: cloned.home,
+        away: cloned.away,
+        league: cloned.league || 'Elite Pro',
+        time: cloned.time,
+        kickoff: cloned.kickoff,
+        locked: true,
+        date: cloned.date,
+        tipType: cloned.tipType,
+        status: finalStatus,
+        odds: Number(cloned.premium?.odds || cloned.odds) || 1.85,
+        confidence: String(cloned.premium?.aiConfidence || cloned.premium?.neuralConfidence || cloned.aiConfidence || cloned.neuralConfidence || '90'),
+        premium: cloned.premium
+      };
+    }
+  }
+
+  if (mode === "history") {
+    if (isPremium) {
+      delete cloned.free;
+      return { ...cloned, locked: false };
+    } else {
+      delete cloned.premium;
+      return { ...cloned, locked: false };
+    }
+  }
+}
+
+export const fetchAndProcessAllBets = async (isPremium: boolean): Promise<BetsDataOutput> => {
+  try {
+    // Fetch individual sub-paths directly from RTDB
+    const [boSnap, eliteSnap, verifiedSnap, freeSnap] = await Promise.all([
+      get(ref(betrixDb, 'Bets/Bo')),
+      get(ref(betrixDb, 'Bets/EliteCombo')),
+      get(ref(betrixDb, 'Bets/Verified')),
+      get(ref(betrixDb, 'Bets/FreeBets'))
+    ]);
+
+    const boData = boSnap.exists() ? boSnap.val() : null;
+    const eliteData = eliteSnap.exists() ? eliteSnap.val() : null;
+    const verifiedData = verifiedSnap.exists() ? verifiedSnap.val() : null;
+    const freeData = freeSnap.exists() ? freeSnap.val() : null;
+
+    // Helper to extract flat lists of bets from nested structures
+    const extractBets = (data: any, catType: string): any[] => {
+      if (!data) return [];
+      
+      const rawList: any[] = [];
+      
+      const traverse = (item: any, dateHint: string = '') => {
+        if (!item || typeof item !== 'object') return;
+        
+        // If it's a bet item itself
+        if (item.homeTeam || item.home || item.match) {
+          const b = { ...item };
+          if (!b.date && dateHint && /^\d{4}-\d{2}-\d{2}$/.test(dateHint)) {
+            b.date = dateHint;
+          }
+          if (!b.tipType) {
+            b.tipType = catType;
+          }
+          rawList.push(b);
+          return;
+        }
+        
+        // If it's a nested list under "picks"
+        if (item.picks && Array.isArray(item.picks)) {
+          item.picks.forEach((p: any) => {
+            if (p && typeof p === 'object') {
+              const b = { ...p };
+              if (!b.date && dateHint && /^\d{4}-\d{2}-\d{2}$/.test(dateHint)) {
+                b.date = dateHint;
+              }
+              if (!b.tipType) {
+                b.tipType = catType;
+              }
+              rawList.push(b);
+            }
+          });
+          return;
+        }
+
+        // Recurse down
+        Object.entries(item).forEach(([k, val]) => {
+          if (val && typeof val === 'object') {
+            traverse(val, dateHint || k);
+          }
+        });
+      };
+
+      if (Array.isArray(data)) {
+        data.forEach(item => traverse(item));
+      } else {
+        traverse(data);
+      }
+
+      return rawList;
+    };
+
+    const boBets = extractBets(boData, 'bet_of_the_day');
+    const eliteBets = extractBets(eliteData, 'elite_combo');
+    const verifiedBets = extractBets(verifiedData, 'verified');
+    const freeBets = extractBets(freeData, 'free');
+
+    const output: BetsDataOutput = {
+      bet_of_the_day: { display: [], history: [] },
+      verified: { display: [], history: [] },
+      elite_combo: { display: [], history: [] },
+      free: { display: [], history: [] }
+    };
+
+    // Format today's date both as Local and UTC to be super safe
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayLocal = `${year}-${month}-${day}`;
+    const todayUTC = today.toISOString().split('T')[0];
+
+    const categories: { key: 'bet_of_the_day' | 'verified' | 'elite_combo' | 'free'; list: any[] }[] = [
+      { key: 'bet_of_the_day', list: boBets },
+      { key: 'verified', list: verifiedBets },
+      { key: 'elite_combo', list: eliteBets },
+      { key: 'free', list: freeBets }
+    ];
+
+    for (const { key, list } of categories) {
+      // 1. Process "display" (Today's picks)
+      // Check if the bet's date matches todayLocal or todayUTC
+      const todayCatBets = list.filter(bet => {
+        if (!bet) return false;
+        const bDate = bet.date || '';
+        return bDate === todayLocal || bDate === todayUTC;
+      });
+
+      // Sort by time ASC
+      todayCatBets.sort((a, b) => {
+        const timeA = a.time || '';
+        const timeB = b.time || '';
+        return timeA.localeCompare(timeB);
+      });
+
+      if (todayCatBets.length > 0) {
+        if (key === 'elite_combo' || key === 'verified' || key === 'free') {
+          // Keep all of today's combo elements, verified elements, or free elements
+          output[key].display = todayCatBets.map(b => processBet(b, isPremium, 'display'));
+        } else {
+          // For single BOD, keep the most recent
+          const mostRecentBet = todayCatBets[todayCatBets.length - 1];
+          const processed = processBet(mostRecentBet, isPremium, 'display');
+          output[key].display = [processed];
+        }
+      } else if (list.length > 0) {
+        // Fallback: If no bet matches today's exact date, find the most recent date available in the list
+        const sortedAll = [...list].sort((a, b) => {
+          const dateA = a.date || '';
+          const dateB = b.date || '';
+          if (dateA !== dateB) return dateB.localeCompare(dateA); // Date DESC
+          const timeA = a.time || '';
+          const timeB = b.time || '';
+          return timeB.localeCompare(timeA); // Time DESC
+        });
+        
+        const mostRecentDate = sortedAll[0]?.date;
+        if (mostRecentDate) {
+          const matches = sortedAll.filter(b => b.date === mostRecentDate);
+          if (key === 'elite_combo' || key === 'verified' || key === 'free') {
+            output[key].display = matches.map(b => processBet(b, isPremium, 'display'));
+          } else {
+            const processed = processBet(matches[0], isPremium, 'display');
+            output[key].display = [processed];
+          }
+        }
+      }
+
+      // 2. Process "history" (Archive: date < TODAY)
+      const displayDates = new Set(output[key].display.map(b => b?.date).filter(Boolean));
+      const historyCatBets = list.filter(bet => {
+        if (!bet) return false;
+        const bDate = bet.date || '';
+        if (displayDates.has(bDate)) return false;
+        return bDate < todayLocal;
+      });
+
+      // Sort by date DESC, then time ASC
+      historyCatBets.sort((a, b) => {
+        const dateA = a.date || '';
+        const dateB = b.date || '';
+        if (dateA !== dateB) {
+          return dateB.localeCompare(dateA);
+        }
+        const timeA = a.time || '';
+        const timeB = b.time || '';
+        return timeA.localeCompare(timeB);
+      });
+
+      output[key].history = historyCatBets.map(bet => processBet(bet, isPremium, 'history'));
+    }
+
+    return output;
+  } catch (error) {
+    console.error("fetchAndProcessAllBets Error:", error);
+    return {
+      bet_of_the_day: { display: [], history: [] },
+      verified: { display: [], history: [] },
+      elite_combo: { display: [], history: [] },
+      free: { display: [], history: [] }
+    };
+  }
+};
+

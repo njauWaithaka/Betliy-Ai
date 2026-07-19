@@ -14,7 +14,8 @@ import {
   Layers,
   Info,
   ArrowRight,
-  Radar
+  Radar,
+  Lock
 } from 'lucide-react';
 import { cn } from '../services/utils';
 import { FirebasePick } from '../types';
@@ -52,6 +53,45 @@ const VerifiedPickCard: React.FC<{
   onViewAnalysis: () => void;
 }> = ({ pick, isPremium, onAdd, onRemove, isSelected, onViewAnalysis }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  if (pick.locked) {
+    return (
+      <div className="bg-slate-900/40 border border-white/5 rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-10 relative overflow-hidden flex flex-col gap-6">
+        <div className="absolute top-0 left-0 px-4 py-1.5 bg-slate-800 text-slate-400 rounded-br-2xl text-[9px] sm:text-[11px] font-black uppercase italic tracking-widest z-30 flex items-center gap-2">
+          <Lock size={12} />
+          Premium Pick
+        </div>
+        
+        {/* Header: League + Time */}
+        <div className="flex justify-between items-center bg-slate-900/20 px-4 py-2 rounded-xl">
+          <span className="text-[11px] sm:text-xs font-black text-slate-400 uppercase tracking-wider truncate max-w-[150px]">
+            {pick.league}
+          </span>
+          <span className="text-[11px] sm:text-xs font-black text-[#00FFA3] uppercase tracking-wider">
+            {pick.time}
+          </span>
+        </div>
+
+        {/* Teams */}
+        <div className="flex items-center justify-between gap-6">
+          <div className="flex flex-col items-center gap-3 flex-1">
+            <span className="text-sm font-black text-slate-200 text-center">{pick.homeTeam || pick.home}</span>
+          </div>
+          <div className="text-xs font-black text-slate-600 uppercase italic">VS</div>
+          <div className="flex flex-col items-center gap-3 flex-1">
+            <span className="text-sm font-black text-slate-200 text-center">{pick.awayTeam || pick.away}</span>
+          </div>
+        </div>
+
+        {/* Locked Banner */}
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 text-center mt-2">
+          <span className="text-xs sm:text-sm font-black text-amber-400 uppercase tracking-wider flex items-center justify-center gap-2">
+            🔒 Locked Premium Pick — Upgrade to Unlock
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   const confidenceColor = (conf: number) => {
     if (conf >= 85) return 'text-blue-400';

@@ -6,11 +6,12 @@ import LoginModal from './components/LoginModal';
 import MatchHistory from './components/MatchHistory';
 import SmartLoader from './components/SmartLoader';
 import NeuralChatInput from './components/NeuralChatInput';
-import { analyzeFixture, chatWithNeural, fetchFreePicks, fetchPremiumHistory, fetchEliteCombo, fetchBOD, fetchDailyBanker, fetchTopPicks } from './services/geminiService';
+import { analyzeFixture, chatWithNeural, fetchFreePicks, fetchPremiumHistory, fetchEliteCombo, fetchBOD, fetchDailyBanker, fetchTopPicks, fetchAndProcessAllBets } from './services/geminiService';
 import { authService, UserProfile } from './services/authService';
 import AlphaSignalsCard from './components/AlphaSignalsCard';
 import EliteComboCard from './components/EliteComboCard';
 import VerifiedPicksSection from './components/VerifiedPicksSection';
+import { PerformanceTracker } from './components/PerformanceTracker';
 import { FixtureData, Message, BetType, BetAnalysis, AlphaSignal, EliteComboPick, FirebasePick } from './types';
 import { ASSETS, shortenTeamName } from './constants';
 import { usePremiumHistory, PremiumHistoryData, PremiumPackage, PremiumPick } from './services/premiumHistoryHook';
@@ -191,25 +192,121 @@ const App: React.FC = () => {
     setIsInitialLoading(true);
     const today = new Date().toISOString().split('T')[0];
     try {
-      const [picks, history, elite, bod, banker, top] = await Promise.all([
+      const [picks, processed] = await Promise.all([
         fetchFreePicks(today),
-        fetchPremiumHistory(),
-        fetchEliteCombo(),
-        fetchBOD(),
-        fetchDailyBanker(),
-        fetchTopPicks()
+        fetchAndProcessAllBets(isPremium)
       ]);
       
       setFreePicks(picks || []);
-      setEliteCombo(elite || []);
-      setBodPicks(bod || []);
-      setBankerPicks(banker || []);
-      setTopPicks(top || []);
       
+      const mapProcessedBetToFirebasePick = (b: any): FirebasePick => {
+        if (!b) return {} as FirebasePick;
+        const isLocked = !!b.locked;
+        const activeObj = b.premium || {};
+        const resolvedOdds = Number(activeObj.odds || b.odds) || 1.85;
+        const resolvedConf = String(activeObj.aiConfidence || b.confidence || "90");
+        const resolvedScore = b.score || b.ft_score || activeObj.score || activeObj.ft_score || b.predicted_score || '';
+        
+        if (isLocked) {
+          return {
+            home: b.homeTeam,
+            away: b.awayTeam,
+            homeTeam: b.homeTeam,
+            awayTeam: b.awayTeam,
+            league: b.league,
+            kickoff: b.time,
+            time: b.time,
+            locked: true,
+            tip: "Locked Pick",
+            odds: resolvedOdds,
+            confidence: resolvedConf,
+            aiConfidence: Number(resolvedConf) || 90,
+            status: b.status || "pending",
+            score: resolvedScore,
+            ft_score: resolvedScore
+          } as any;
+        }
+
+        return {
+          home: b.homeTeam,
+          away: b.awayTeam,
+          homeTeam: b.homeTeam,
+          awayTeam: b.awayTeam,
+          league: b.league,
+          kickoff: b.time,
+          time: b.time,
+          date: b.date,
+          locked: false,
+          tip: activeObj.market || b.tip || b.market || "Analysis Pending",
+          odds: resolvedOdds,
+          confidence: resolvedConf,
+          aiConfidence: Number(resolvedConf) || 90,
+          status: activeObj.status || b.status || "pending",
+          riskFactor: "Low",
+          score: resolvedScore,
+          ft_score: resolvedScore,
+          preview_ui: {
+            title: "Neural Market Analysis",
+            summary: activeObj.finalVerdict || b.finalVerdict || "",
+            sections: [],
+            bullet_points: []
+          }
+        } as any;
+      };
+
+      const mapProcessedBetToEliteComboPick = (b: any): EliteComboPick => {
+        if (!b) return {} as EliteComboPick;
+        const isLocked = !!b.locked;
+        const activeObj = b.premium || {};
+        const resolvedOdds = Number(activeObj.odds || b.odds) || 1.85;
+        const resolvedConf = Number(activeObj.aiConfidence || b.confidence) || 90;
+
+        if (isLocked) {
+          return {
+            homeTeam: b.homeTeam,
+            awayTeam: b.awayTeam,
+            league: b.league,
+            tip: "Locked Pick",
+            odds: resolvedOdds,
+            aiConfidence: resolvedConf,
+            riskLevel: "Medium",
+            tipType: "elite_combo",
+            locked: true
+          } as any;
+        }
+        
+        return {
+          homeTeam: b.homeTeam,
+          awayTeam: b.awayTeam,
+          league: b.league,
+          tip: activeObj.market || "Analysis Pending",
+          odds: resolvedOdds,
+          aiConfidence: resolvedConf,
+          riskLevel: "Low",
+          tipType: "elite_combo",
+          analysis: activeObj.finalVerdict || "",
+          locked: false
+        };
+      };
+
+      const bodList = (processed.bet_of_the_day.display || []).map(mapProcessedBetToFirebasePick);
+      const verifiedList = (processed.verified.display || []).map(mapProcessedBetToFirebasePick);
+      const eliteList = (processed.elite_combo.display || []).map(mapProcessedBetToEliteComboPick);
+
+      setBodPicks(bodList);
+      setTopPicks(verifiedList);
+      setEliteCombo(eliteList);
+
       if (picks?.length) {
         setFeaturedPick(picks[0]);
       }
-      setPremiumHistory(history || []);
+
+      const allHistory = [
+        ...(processed.bet_of_the_day.history || []).map(mapProcessedBetToFirebasePick),
+        ...(processed.verified.history || []).map(mapProcessedBetToFirebasePick),
+        ...(processed.elite_combo.history || []).map(mapProcessedBetToFirebasePick)
+      ];
+      setPremiumHistory(allHistory);
     } catch (error) {
       console.error("Initial load failed:", error);
     } finally {
@@ -219,7 +316,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [isPremium]);
 
   useEffect(() => {
     if (user) {
@@ -1001,6 +1098,13 @@ const App: React.FC = () => {
                 }} 
               />
             )}
+
+            <PerformanceTracker 
+              premiumHistory={premiumHistory}
+              isLoading={isInitialLoading}
+              isPremium={isPremium}
+              onUnlockPremium={() => setShowPaymentModal(true)}
+            />
           </div>
 
           <div className="space-y-4 sm:space-y-6">

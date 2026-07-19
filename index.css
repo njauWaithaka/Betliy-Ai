@@ -13,6 +13,13 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+.container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
 .font-mono {
   font-family: 'JetBrains Mono', monospace;
 }

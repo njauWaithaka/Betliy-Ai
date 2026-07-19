@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { betrixDb, bettipsDb, ref, get, query, orderByKey, limitToLast, endBefore } from './externalFirebase';
+import { useState, useEffect, useCallback } from 'react';
+import { fetchAndProcessAllBets } from './geminiService';
 
 export interface PremiumPick {
   match_name: string;
@@ -31,15 +31,8 @@ export interface PremiumPick {
   ft_score?: string;
   ht_score?: string;
   profit?: string;
-  // Free pick specific fields
   match?: string;
   generated_at?: string;
-  scores?: {
-    confidence: number;
-    final: number;
-    form: number;
-    odds_value: number;
-  };
   source?: string;
 }
 
@@ -63,137 +56,87 @@ export interface PremiumHistoryData {
   [packageName: string]: PremiumPackage | PremiumPick[] | any;
 }
 
-const CHUNK_SIZE = 15; // Number of dates to fetch per chunk
+const buildHistoryDataStructure = (historyOutput: any, isPremium: boolean) => {
+  const data: Record<string, Record<string, any>> = {};
+  const categories = ['bet_of_the_day', 'verified', 'elite_combo', 'free'];
+  
+  const catToPkgKey: Record<string, string> = {
+    'bet_of_the_day': 'bod',
+    'verified': 'topPicks',
+    'elite_combo': 'eliteCombo',
+    'free': 'freePicks'
+  };
 
-export const usePremiumHistory = () => {
+  for (const cat of categories) {
+    const list = historyOutput[cat]?.history || [];
+    for (const bet of list) {
+      const date = bet.date;
+      if (!date) continue;
+      
+      if (!data[date]) {
+        data[date] = {};
+      }
+      
+      if (!data[date][cat]) {
+        data[date][cat] = { picks: [] };
+      }
+      
+      const hasSubObjects = (bet.free && typeof bet.free === 'object') || (bet.premium && typeof bet.premium === 'object');
+      const activeObj = hasSubObjects ? (isPremium ? bet.premium : bet.free) : null;
+      
+      const statusValue = activeObj ? (activeObj.status || bet.status) : bet.status;
+      const tipValue = activeObj ? (activeObj.market || bet.tip || bet.market || 'Analysis Pending') : (bet.tip || bet.market || 'Analysis Pending');
+      const oddsValue = activeObj ? (activeObj.odds || bet.odds) : bet.odds;
+      const confidenceValue = activeObj ? (activeObj.aiConfidence || bet.aiConfidence) : bet.aiConfidence;
+      const finalVerdictValue = activeObj ? (activeObj.finalVerdict || bet.analysis || bet.finalVerdict || '') : (bet.analysis || bet.finalVerdict || '');
+      
+      const finalPkgKey = catToPkgKey[cat] || cat;
+
+      data[date][cat].picks.push({
+        ...bet,
+        homeTeam: bet.homeTeam,
+        awayTeam: bet.awayTeam,
+        home: bet.homeTeam,
+        away: bet.awayTeam,
+        league: bet.league,
+        time: bet.time,
+        date: bet.date,
+        tip: tipValue,
+        market: tipValue,
+        odds: Number(oddsValue) || 1.85,
+        confidence: String(confidenceValue || '90'),
+        aiConfidence: Number(confidenceValue) || 90,
+        status: statusValue || 'pending',
+        finalVerdict: finalVerdictValue,
+        riskFactor: isPremium ? "Low" : "Medium",
+        riskLevel: isPremium ? "Low" : "Medium",
+        tipType: bet.tipType,
+        packageKey: finalPkgKey
+      });
+    }
+  }
+  
+  return data;
+};
+
+export const usePremiumHistory = (isPremium: boolean = false) => {
   const [data, setData] = useState<PremiumHistoryData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  
-  const lastKeyRef = useRef<string | null>(null);
-  const isInitialFetchRef = useRef(true);
-
-  const fetchEliteCombo = async () => {
-    try {
-      const eliteComboRef = ref(bettipsDb, 'betrix/EliteCombo');
-      const snapshot = await get(eliteComboRef);
-      return snapshot.exists() ? snapshot.val() : null;
-    } catch (err) {
-      console.error("Error fetching EliteCombo:", err);
-      return null;
-    }
-  };
-
-  const fetchHistoryChunk = async (lastDate: string | null) => {
-    try {
-      let historyQuery;
-      const historyRef = ref(betrixDb, 'PremiumHistory');
-      
-      if (lastDate) {
-        historyQuery = query(
-          historyRef,
-          orderByKey(),
-          endBefore(lastDate),
-          limitToLast(CHUNK_SIZE)
-        );
-      } else {
-        historyQuery = query(
-          historyRef,
-          orderByKey(),
-          limitToLast(CHUNK_SIZE)
-        );
-      }
-
-      const snapshot = await get(historyQuery);
-      if (!snapshot.exists()) return null;
-      
-      return snapshot.val();
-    } catch (err) {
-      console.error("Error fetching history chunk:", err);
-      throw err;
-    }
-  };
 
   const loadInitialData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setData(null);
-    lastKeyRef.current = null;
-    setHasMore(true);
-    isInitialFetchRef.current = true;
-
     try {
-      // Fetch EliteCombo and first chunk of history in parallel
-      const [eliteCombo, historyChunk] = await Promise.all([
-        fetchEliteCombo(),
-        fetchHistoryChunk(null)
-      ]);
-
-      const mergedData: PremiumHistoryData = {};
-      
-      if (eliteCombo) {
-        mergedData['EliteCombo'] = eliteCombo;
-      }
-
-      if (historyChunk) {
-        Object.assign(mergedData, historyChunk);
-        
-        // Track the oldest key in this chunk for next pagination
-        const keys = Object.keys(historyChunk).sort();
-        if (keys.length > 0) {
-          lastKeyRef.current = keys[0];
-          if (keys.length < CHUNK_SIZE) {
-            setHasMore(false);
-          }
-        } else {
-          setHasMore(false);
-        }
-      } else {
-        setHasMore(false);
-      }
-
-      setData(mergedData);
+      const processedBets = await fetchAndProcessAllBets(isPremium);
+      const mappedHistory = buildHistoryDataStructure(processedBets, isPremium);
+      setData(mappedHistory);
     } catch (err: any) {
-      setError(err.message || 'Failed to load initial data');
+      setError(err.message || 'Failed to load premium history');
     } finally {
       setLoading(false);
-      isInitialFetchRef.current = false;
     }
-  }, []);
-
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore || !lastKeyRef.current) return;
-
-    setLoadingMore(true);
-    try {
-      const historyChunk = await fetchHistoryChunk(lastKeyRef.current);
-      
-      if (historyChunk) {
-        setData(prev => ({
-          ...prev,
-          ...historyChunk
-        }));
-
-        const keys = Object.keys(historyChunk).sort();
-        if (keys.length > 0) {
-          lastKeyRef.current = keys[0];
-          if (keys.length < CHUNK_SIZE) {
-            setHasMore(false);
-          }
-        } else {
-          setHasMore(false);
-        }
-      } else {
-        setHasMore(false);
-      }
-    } catch (err: any) {
-      console.error("Load more error:", err);
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [loadingMore, hasMore]);
+  }, [isPremium]);
 
   useEffect(() => {
     loadInitialData();
@@ -202,10 +145,10 @@ export const usePremiumHistory = () => {
   return { 
     data, 
     loading, 
-    loadingMore, 
+    loadingMore: false, 
     error, 
-    hasMore, 
-    loadMore, 
+    hasMore: false, 
+    loadMore: () => {}, 
     refresh: loadInitialData 
   };
 };
