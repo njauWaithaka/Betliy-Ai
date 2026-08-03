@@ -197,7 +197,7 @@ const AlphaSignalsCard: React.FC<AlphaSignalsCardProps> = ({ signals, isPremium,
                   <div className="text-left sm:text-right">
                     <div className="text-[8px] sm:text-[11px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Confidence</div>
                     <div className={cn(
-                      "text-xl sm:text-4xl font-black italic leading-none",
+                      "text-lg sm:text-2xl font-black italic leading-none",
                       isBOTD ? "text-amber-400" : isBanker ? "text-blue-400" : "text-emerald-400"
                     )}>{signal.confidence}%</div>
                   </div>

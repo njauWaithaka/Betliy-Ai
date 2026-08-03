@@ -192,7 +192,7 @@ const PricingTier: React.FC<{
       <div className="flex items-end gap-3">
         <div className="flex flex-col">
           <span className="text-slate-500 text-sm font-black line-through decoration-rose-500/50 leading-none mb-1">{originalPrice}</span>
-          <span className="text-4xl sm:text-5xl font-black text-white italic tracking-tighter leading-none">{price}</span>
+          <span className="text-2xl sm:text-xl sm:text-2xl font-black text-white italic tracking-tighter leading-none">{price}</span>
         </div>
         <span className="text-[10px] font-black text-[#00FFA3] uppercase tracking-widest mb-1">/ Month</span>
       </div>
@@ -351,7 +351,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 whileInView={{ y: 0, opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 }}
-                className="text-3xl sm:text-4xl font-black text-white italic uppercase tracking-tighter leading-[0.9] flex flex-col"
+                className="text-xl sm:text-3xl font-black text-white italic uppercase tracking-tighter leading-[0.9] flex flex-col"
               >
                 <span>YOU'RE MISSING</span>
                 <span className="text-[#00FFA3]">TODAY'S WINNING</span>
@@ -483,7 +483,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 <motion.div 
                   initial={{ scale: 0.9 }}
                   whileInView={{ scale: 1 }}
-                  className="text-6xl font-black text-white italic tracking-tighter leading-none"
+                  className="text-3xl sm:text-4xl font-black text-white italic tracking-tighter leading-none"
                 >
                   8/10 Won
                 </motion.div>
@@ -495,7 +495,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 <motion.div 
                   initial={{ y: 10, opacity: 0 }}
                   whileInView={{ y: 0, opacity: 1 }}
-                  className="text-7xl font-black text-[#00FFA3] italic leading-none drop-shadow-[0_0_30px_rgba(0,255,163,0.5)]"
+                  className="text-4xl sm:text-5xl font-black text-[#00FFA3] italic leading-none drop-shadow-[0_0_30px_rgba(0,255,163,0.5)]"
                 >
                   +$95
                 </motion.div>
@@ -510,7 +510,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 whileHover={{ scale: 1.02 }}
                 className="bg-slate-950/50 border border-white/5 rounded-3xl p-6 space-y-1"
               >
-                <div className="text-3xl font-black text-white italic tracking-tighter">80% Win Rate</div>
+                <div className="text-xl sm:text-2xl font-black text-white italic tracking-tighter">80% Win Rate</div>
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">LAST 50 AI SIGNALS</p>
               </motion.div>
             </div>

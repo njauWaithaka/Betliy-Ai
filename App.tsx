@@ -56,7 +56,7 @@ const BetwinnerBanner: React.FC = () => (
       </div>
       
       <div>
-        <div className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none mb-1">100% BONUS</div>
+        <div className="text-lg sm:text-xl font-black text-white italic tracking-tighter uppercase leading-none mb-1">100% BONUS</div>
         <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest opacity-80">ON YOUR FIRST DEPOSIT</div>
       </div>
 

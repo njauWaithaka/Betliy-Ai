@@ -69,7 +69,7 @@ const EliteComboCard: React.FC<EliteComboCardProps> = ({ picks, isPremium, onUnl
                 <span className="text-[8px] font-black uppercase tracking-widest">Elite Combo</span>
               </div>
             </div>
-            <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-none">
+            <h2 className="text-xl sm:text-2xl font-black text-white italic uppercase tracking-tighter leading-none">
               ELITE COMBO
             </h2>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
@@ -79,7 +79,7 @@ const EliteComboCard: React.FC<EliteComboCardProps> = ({ picks, isPremium, onUnl
 
           <div className="bg-slate-950/50 border border-emerald-500/30 px-6 py-3 rounded-2xl backdrop-blur-md">
             <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1 text-center">Total Odds</div>
-            <div className="text-3xl font-black text-emerald-400 italic leading-none drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">
+            <div className="text-xl sm:text-2xl font-black text-emerald-400 italic leading-none drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">
               {isPremium ? `@ ${totalOdds.toFixed(2)}` : "🔒 LOCKED"}
             </div>
           </div>

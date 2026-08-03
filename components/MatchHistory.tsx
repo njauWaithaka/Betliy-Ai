@@ -667,7 +667,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
                   <p className="text-[8px] sm:text-[10px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
                   <span className="text-xs">{item.subIcon}</span>
                 </div>
-                <p className={`text-2xl sm:text-4xl font-black italic tracking-tighter ${item.color} ${item.shadowClass}`}>
+                <p className={`text-xl sm:text-2xl font-black italic tracking-tighter ${item.color} ${item.shadowClass}`}>
                   {item.value}
                 </p>
                 {item.highlight && (
@@ -1202,7 +1202,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
         <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-blue-500/10 blur-[100px] rounded-full" />
         
         <div className="space-y-2 relative z-10">
-          <h3 className="text-2xl sm:text-4xl font-black text-white italic uppercase tracking-tighter">📲 Get Live Picks Instantly</h3>
+          <h3 className="text-xl sm:text-2xl font-black text-white italic uppercase tracking-tighter">📲 Get Live Picks Instantly</h3>
           <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Join 15,000+ members receiving real-time neural signals</p>
         </div>
         

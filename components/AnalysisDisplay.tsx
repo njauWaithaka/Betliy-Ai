@@ -335,11 +335,11 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
                      <h3 className={`font-black text-white italic uppercase tracking-tighter leading-none ${
                        analysis.pickType && analysis.pickType !== 'Free Pick' 
                         ? analysis.pickType === 'Daily Banker' 
-                          ? 'text-3xl sm:text-7xl drop-shadow-[0_0_25px_rgba(59,130,246,0.4)]' 
+                          ? 'text-xl sm:text-3xl md:text-4xl drop-shadow-[0_0_25px_rgba(59,130,246,0.4)]' 
                           : analysis.pickType === 'Bet of the Day'
-                            ? 'text-3xl sm:text-7xl drop-shadow-[0_0_25px_rgba(245,158,11,0.4)]'
-                            : 'text-3xl sm:text-7xl drop-shadow-[0_0_25px_rgba(16,185,129,0.4)]'
-                        : 'text-xl sm:text-5xl drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]'
+                            ? 'text-xl sm:text-3xl md:text-4xl drop-shadow-[0_0_25px_rgba(245,158,11,0.4)]'
+                            : 'text-xl sm:text-3xl md:text-4xl drop-shadow-[0_0_25px_rgba(16,185,129,0.4)]'
+                        : 'text-lg sm:text-2xl md:text-3xl drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]'
                      }`}>
                        {analysis.tip}
                      </h3>
@@ -357,8 +357,8 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
                        </div>
                        <div className={`font-black italic tabular-nums transition-all duration-300 group-hover/stat:scale-110 ${
                          analysis.pickType && analysis.pickType !== 'Free Pick' 
-                          ? analysis.pickType === 'Daily Banker' ? 'text-xl sm:text-4xl text-amber-400' : 'text-xl sm:text-4xl text-emerald-300' 
-                          : 'text-sm sm:text-2xl text-emerald-400'
+                          ? analysis.pickType === 'Daily Banker' ? 'text-lg sm:text-2xl md:text-3xl text-amber-400' : 'text-lg sm:text-2xl md:text-3xl text-emerald-300' 
+                          : 'text-sm sm:text-xl text-emerald-400'
                        }`}>@ {analysis.odds}</div>
                      </div>
                      <div className="w-px h-8 bg-white/10" />
@@ -372,7 +372,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
                          }`}>CONFIDENCE</div>
                        </div>
                        <div className={`font-black italic tabular-nums transition-all duration-300 group-hover/stat:scale-110 ${
-                         analysis.pickType && analysis.pickType !== 'Free Pick' ? 'text-xl sm:text-4xl text-white' : 'text-sm sm:text-2xl text-white'
+                         analysis.pickType && analysis.pickType !== 'Free Pick' ? 'text-lg sm:text-2xl md:text-3xl text-white' : 'text-sm sm:text-xl text-white'
                        }`}>{Math.round(interpolatedConfidence)}%</div>
                      </div>
                    </div>

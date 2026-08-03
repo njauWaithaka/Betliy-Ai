@@ -275,7 +275,7 @@ const VerifiedPicksSection: React.FC<VerifiedPicksSectionProps> = ({
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]" />
-              <h2 className="text-2xl sm:text-4xl font-black text-white uppercase tracking-tighter italic">Verified Picks</h2>
+              <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tighter italic">Verified Picks</h2>
             </div>
             <p className="text-sm sm:text-base text-slate-400 font-bold italic">High-confidence single bets analyzed by the AI system.</p>
           </div>
