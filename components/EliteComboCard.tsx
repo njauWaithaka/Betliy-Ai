@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Zap, Target, ShieldCheck, ChevronRight, ExternalLink, Flame, ChevronDown, BrainCircuit, Lock as LockIcon, Radar } from 'lucide-react';
 import { cn } from '../services/utils';
 import { EliteComboPick } from '../types';
+import { useTranslation } from '../services/i18n';
 
 interface EliteComboCardProps {
   picks: EliteComboPick[];
@@ -23,6 +24,7 @@ const TeamLogo: React.FC<{ url?: string; name: string; size?: string }> = ({ url
 );
 
 const EliteComboCard: React.FC<EliteComboCardProps> = ({ picks, isPremium, onUnlock, onPlaceBet }) => {
+  const { t } = useTranslation();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +55,7 @@ const EliteComboCard: React.FC<EliteComboCardProps> = ({ picks, isPremium, onUnl
       {/* Type Label */}
       <div className="absolute top-0 left-0 px-4 py-1.5 bg-purple-500 text-white rounded-br-2xl text-[10px] font-black uppercase italic tracking-[0.2em] z-[60] flex items-center gap-2 shadow-2xl">
         <Flame size={12} />
-        Elite Combo
+        {t('combo.title', '💎 Elite Combo')}
       </div>
 
       {/* Header Card */}
@@ -66,25 +68,26 @@ const EliteComboCard: React.FC<EliteComboCardProps> = ({ picks, isPremium, onUnl
               <div className="px-2 py-0.5 bg-emerald-500 text-slate-950 text-[8px] font-black uppercase italic rounded">PREMIUM MULTIBET</div>
               <div className="flex items-center gap-1 text-emerald-400">
                 <Zap size={10} />
-                <span className="text-[8px] font-black uppercase tracking-widest">Elite Combo</span>
+                <span className="text-[8px] font-black uppercase tracking-widest">{t('combo.title', '💎 Elite Combo')}</span>
               </div>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white italic uppercase tracking-tighter leading-none">
-              ELITE COMBO
+              💎 {t('combo.title', 'ELITE COMBO')}
             </h2>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
-              {totalPicks} Picks Combined
+            <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
+              {t('combo.desc', 'Today\'s premium accumulator built by AI.')} ({totalPicks} Leg Accumulator)
             </p>
           </div>
 
           <div className="bg-slate-950/50 border border-emerald-500/30 px-6 py-3 rounded-2xl backdrop-blur-md">
-            <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1 text-center">Total Odds</div>
+            <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1 text-center">{t('combo.totalOdds', 'Total Odds')}</div>
             <div className="text-xl sm:text-2xl font-black text-emerald-400 italic leading-none drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">
-              {isPremium ? `@ ${totalOdds.toFixed(2)}` : "🔒 LOCKED"}
+              {isPremium ? `@ ${totalOdds.toFixed(2)}` : `🔒 ${t('card.lockedVip', 'LOCKED')}`}
             </div>
           </div>
         </div>
       </div>
+
 
       {/* Picks List */}
       <div className="space-y-2">
@@ -117,7 +120,7 @@ const EliteComboCard: React.FC<EliteComboCardProps> = ({ picks, isPremium, onUnl
                         {pick.homeTeam} <span className="text-slate-600 mx-0.5">V</span> {pick.awayTeam}
                       </h4>
                       <div className="text-[9px] font-bold text-amber-500 italic mt-0.5">
-                        🔒 Locked Premium Pick — Upgrade to Unlock
+                        🔒 {t('card.lockedNotice', 'Locked Premium Pick — Upgrade to Unlock')}
                       </div>
                     </div>
                   </div>
@@ -165,12 +168,12 @@ const EliteComboCard: React.FC<EliteComboCardProps> = ({ picks, isPremium, onUnl
 
                 <div className="flex items-center gap-4 shrink-0">
                   <div className="text-right">
-                    <div className="text-[7px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Confidence</div>
+                    <div className="text-[7px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">{t('card.confidence', 'Confidence')}</div>
                     <div className="text-xs font-black text-white italic tabular-nums">{pick.aiConfidence}%</div>
                   </div>
                   
                   <div className="bg-slate-950 border border-white/5 px-3 py-2 rounded-xl min-w-[60px] text-center group-hover:border-emerald-500/30 transition-colors">
-                    <div className="text-[7px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Odds</div>
+                    <div className="text-[7px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">{t('card.valueOdds', 'Odds')}</div>
                     <div className="text-sm font-black text-emerald-400 italic tabular-nums">@ {pick.odds}</div>
                   </div>
                 </div>
@@ -183,7 +186,7 @@ const EliteComboCard: React.FC<EliteComboCardProps> = ({ picks, isPremium, onUnl
                   className="flex items-center gap-2 text-[8px] sm:text-[10px] font-black text-emerald-400/60 uppercase tracking-widest hover:text-emerald-400 transition-colors touch-target px-2 py-1"
                 >
                   <BrainCircuit size={10} />
-                  VIEW ANALYSIS
+                  {t('card.viewAnalysis', 'VIEW ANALYSIS')}
                   <ChevronDown size={10} className={`transition-transform ${expandedIdx === idx ? 'rotate-180' : ''}`} />
                 </button>
                 
@@ -215,19 +218,19 @@ const EliteComboCard: React.FC<EliteComboCardProps> = ({ picks, isPremium, onUnl
             className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-2xl font-black uppercase italic text-xs transition-all shadow-lg shadow-emerald-500/20 group touch-target"
           >
             <Flame size={14} className="group-hover:animate-bounce" />
-            Place Bet
+            {t('combo.placeBet', 'Place Bet')}
           </button>
         ) : (
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-6 text-center mt-4">
-            <h4 className="text-sm font-black text-white uppercase tracking-wider mb-2">🔒 Unlock Today's High-Odds Elite Combo</h4>
+            <h4 className="text-sm font-black text-white uppercase tracking-wider mb-2">🔒 {t('combo.unlockTitle', "Unlock Today's High-Odds Elite Combo")}</h4>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest max-w-xs mx-auto mb-4 leading-relaxed">
-              Get instant access to this high-odds multi-bet ticket and the full neural breakdown.
+              {t('combo.unlockDesc', 'Get instant access to this high-odds multi-bet ticket and the full neural breakdown.')}
             </p>
             <button 
               onClick={onUnlock}
               className="px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl font-black uppercase text-[10px] transition-all shadow-lg shadow-emerald-500/20 touch-target"
             >
-              Upgrade to Unlock
+              {t('card.unlockVip', 'Upgrade to Unlock')}
             </button>
           </div>
         )}

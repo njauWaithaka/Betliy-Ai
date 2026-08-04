@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { usePremiumHistory, PremiumPick } from '../services/premiumHistoryHook';
 import { 
   Trophy, Calendar, Globe, Zap, ChevronRight, Search, Filter, 
@@ -10,20 +10,169 @@ import {
 import { shortenTeamName } from '../constants';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer, AreaChart, Area, Dot 
+  ResponsiveContainer, AreaChart, Area, Dot, ReferenceLine 
 } from 'recharts';
+import { useTranslation } from '../services/i18n';
 
 interface MatchHistoryProps {
   isPremium?: boolean;
+  onUnlockPremium?: () => void;
 }
+
 
 type StatusFilter = 'all' | 'win' | 'loss' | 'pending';
 type CategoryFilter = 'all' | 'bod' | 'verified' | 'elite_combo' | 'free';
 type TimeframeFilter = 7 | 14 | 30;
 
-const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
+const ArchiveSkeleton: React.FC = () => {
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-6 sm:space-y-10 animate-pulse pb-20"
+    >
+      {/* Editorial Header Skeleton */}
+      <div className="space-y-3 sm:space-y-4 px-1 sm:px-2">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="h-2 w-12 sm:w-20 bg-slate-800/80 rounded" />
+          <div className="h-2 w-28 sm:w-36 bg-emerald-500/20 rounded animate-pulse" />
+        </div>
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
+          <div className="space-y-2">
+            <div className="h-8 sm:h-12 w-48 sm:w-80 bg-slate-800/90 rounded-xl" />
+            <div className="h-8 sm:h-12 w-32 sm:w-56 bg-emerald-500/10 border border-emerald-500/20 rounded-xl" />
+          </div>
+          <div className="max-w-xs space-y-1.5 border-l border-slate-800 pl-3">
+            <div className="h-3 w-40 bg-slate-800/80 rounded" />
+            <div className="h-3 w-52 bg-slate-800/50 rounded" />
+          </div>
+        </div>
+      </div>
+
+      {/* Syncing Badge Banner */}
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-900/60 border border-emerald-500/20 rounded-2xl backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          <Loader2 size={18} className="animate-spin text-emerald-400" />
+          <div>
+            <p className="text-[10px] font-black text-white uppercase tracking-widest">Syncing Historical Vault</p>
+            <p className="text-[9px] text-slate-400">Fetching verified signals and past outcomes...</p>
+          </div>
+        </div>
+        <div className="hidden sm:flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest">Realtime Sync Active</span>
+        </div>
+      </div>
+
+      {/* Decision-Grade KPIs Skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 w-full">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-slate-900/40 border border-white/5 rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-6 space-y-3 relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <div className="h-2.5 w-20 bg-slate-800/80 rounded" />
+              <div className="h-5 w-5 bg-slate-800/60 rounded-full" />
+            </div>
+            <div className="h-8 w-28 bg-slate-800/90 rounded-lg" />
+            <div className="h-2 w-16 bg-slate-800/40 rounded" />
+          </div>
+        ))}
+      </div>
+
+      {/* Performance Chart Section Skeleton */}
+      <div className="bg-slate-900/40 border border-white/5 rounded-[2rem] sm:rounded-[3rem] p-4 sm:p-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="h-6 w-44 bg-slate-800/90 rounded-lg" />
+            <div className="h-3 w-32 bg-slate-800/50 rounded" />
+          </div>
+          <div className="flex items-center gap-2 p-1 bg-slate-950/50 rounded-full overflow-x-auto no-scrollbar">
+            {[1, 2, 3, 4, 5].map((c) => (
+              <div key={c} className="h-6 w-16 sm:w-20 bg-slate-800/70 rounded-full" />
+            ))}
+          </div>
+        </div>
+        {/* Animated Area Chart Placeholder */}
+        <div className="h-[250px] sm:h-[300px] w-full bg-slate-950/40 border border-slate-800/40 rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden">
+          <div className="flex justify-between items-center opacity-30">
+            <div className="h-2 w-10 bg-slate-800 rounded" />
+            <div className="h-[1px] w-full mx-4 bg-slate-800" />
+          </div>
+          <div className="flex justify-between items-center opacity-30">
+            <div className="h-2 w-10 bg-slate-800 rounded" />
+            <div className="h-[1px] w-full mx-4 bg-slate-800" />
+          </div>
+          <div className="flex justify-between items-center opacity-30">
+            <div className="h-2 w-10 bg-slate-800 rounded" />
+            <div className="h-[1px] w-full mx-4 bg-slate-800" />
+          </div>
+          <div className="flex justify-between items-end gap-2 pt-6 h-36">
+            {[35, 50, 40, 70, 55, 80, 65, 90, 85, 98].map((h, idx) => (
+              <div
+                key={idx}
+                className="flex-1 bg-gradient-to-t from-emerald-500/25 via-emerald-500/10 to-transparent rounded-t-sm"
+                style={{ height: `${h}%` }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Search & Filter Bar Skeleton */}
+      <div className="bg-slate-900/40 border border-white/5 rounded-[2rem] p-3 sm:p-5 space-y-4">
+        <div className="flex flex-col lg:flex-row gap-3 items-center justify-between">
+          <div className="h-10 w-full lg:w-72 bg-slate-950/60 rounded-xl border border-slate-800/60" />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="h-8 w-36 bg-slate-950/60 rounded-full border border-slate-800/60" />
+            <div className="h-8 w-48 bg-slate-950/60 rounded-full border border-slate-800/60" />
+            <div className="h-8 w-24 bg-slate-950/60 rounded-full border border-slate-800/60" />
+          </div>
+        </div>
+      </div>
+
+      {/* Match Cards Grid Skeleton */}
+      <div className="space-y-4">
+        {[1, 2, 3, 4].map((item) => (
+          <div
+            key={item}
+            className="bg-slate-900/30 border border-white/5 rounded-2xl p-4 sm:p-5 space-y-4 relative overflow-hidden"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="h-6 w-32 bg-slate-800/80 rounded-full" />
+                <div className="h-4 w-24 bg-slate-800/50 rounded" />
+              </div>
+              <div className="h-6 w-20 bg-slate-800/70 rounded-lg" />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center pt-2">
+              <div className="md:col-span-5 flex items-center gap-3">
+                <div className="w-8 h-8 bg-slate-800/80 rounded-full flex-shrink-0" />
+                <div className="space-y-1.5 flex-1">
+                  <div className="h-3.5 w-3/4 bg-slate-800/90 rounded" />
+                  <div className="h-3.5 w-1/2 bg-slate-800/60 rounded" />
+                </div>
+                <div className="w-8 h-8 bg-slate-800/80 rounded-full flex-shrink-0" />
+              </div>
+              <div className="md:col-span-4 space-y-1.5">
+                <div className="h-3 w-28 bg-slate-800/60 rounded" />
+                <div className="h-4 w-36 bg-slate-800/80 rounded" />
+              </div>
+              <div className="md:col-span-3 flex justify-end">
+                <div className="h-8 w-24 bg-slate-800/70 rounded-xl" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false, onUnlockPremium }) => {
+  const { t } = useTranslation();
   const { data, loading, loadingMore, error, hasMore, loadMore, refresh } = usePremiumHistory(isPremium);
   const [searchTerm, setSearchTerm] = useState('');
+
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   
   // New Filter States
@@ -31,6 +180,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [timeframeFilter, setTimeframeFilter] = useState<TimeframeFilter>(14);
   const [chartCategory, setChartCategory] = useState<CategoryFilter>('all');
+  const [chartMetric, setChartMetric] = useState<'winrate' | 'profit'>('winrate');
 
   const toggleGroup = (groupId: string) => {
     setExpandedGroups(prev => ({
@@ -409,7 +559,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
     let oddsCount = 0;
 
     const categoryStats: Record<string, { wins: number; total: number; profit: number }> = {};
-    const dateProfitMap: Record<string, { profit: number; count: number; isBigWin: boolean; isLoss: boolean }> = {};
+    const dateProfitMap: Record<string, { profit: number; count: number; wins: number; losses: number; isBigWin: boolean; isLoss: boolean }> = {};
 
     // Sort filteredPicks by date ascending for cumulative profit
     const sortedGroups = [...filteredPicks].sort((a, b) => a.date.localeCompare(b.date));
@@ -456,10 +606,20 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
 
       if (includeInChart) {
         if (!dateProfitMap[group.date]) {
-          dateProfitMap[group.date] = { profit: 0, count: 0, isBigWin: false, isLoss: false };
+          dateProfitMap[group.date] = { profit: 0, count: 0, wins: 0, losses: 0, isBigWin: false, isLoss: false };
         }
         dateProfitMap[group.date].profit += groupProfit;
         dateProfitMap[group.date].count += 1;
+
+        group.picks.forEach((pick: any) => {
+          const pStatus = (pick.status || '').toLowerCase();
+          if (pStatus.includes('win') || pStatus.includes('won') || pStatus.includes('green') || pStatus.includes('verified')) {
+            dateProfitMap[group.date].wins += 1;
+          } else if (pStatus.includes('loss') || pStatus.includes('lost') || pStatus.includes('red')) {
+            dateProfitMap[group.date].losses += 1;
+          }
+        });
+
         if (groupProfit > 200) dateProfitMap[group.date].isBigWin = true;
         if (groupProfit < 0) dateProfitMap[group.date].isLoss = true;
       }
@@ -477,14 +637,32 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
 
     // Generate cumulative chart data from aggregated date profits
     let cumulativeProfit = 0;
+    let runningWins = 0;
+    let runningLosses = 0;
+
     const chartData = Object.entries(dateProfitMap)
       .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
       .map(([date, data]) => {
         cumulativeProfit += data.profit;
+        runningWins += data.wins;
+        runningLosses += data.losses;
+
+        const runningSettled = runningWins + runningLosses;
+        const dailySettled = data.wins + data.losses;
+
+        const winRate = runningSettled > 0 ? (runningWins / runningSettled) * 100 : 0;
+        const dailyWinRate = dailySettled > 0 ? (data.wins / dailySettled) * 100 : winRate;
+
         return {
           date,
           profit: Number(cumulativeProfit.toFixed(2)),
           dailyProfit: Number(data.profit.toFixed(2)),
+          winRate: Number(winRate.toFixed(1)),
+          dailyWinRate: Number(dailyWinRate.toFixed(1)),
+          wins: data.wins,
+          losses: data.losses,
+          runningWins,
+          runningSettled,
           count: data.count,
           isBigWin: data.isBigWin,
           isLoss: data.isLoss
@@ -534,12 +712,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
   }, [filteredPicks, chartCategory]);
 
   if (loading && !data) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <Loader2 size={40} className="animate-spin text-emerald-500" />
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] animate-pulse">Syncing Neural Archive...</p>
-      </div>
-    );
+    return <ArchiveSkeleton />;
   }
 
   if (error) {
@@ -562,7 +735,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="space-y-6 sm:space-y-10 animate-in fade-in duration-700 pb-20"
+      className="space-y-6 sm:space-y-10 animate-in fade-in duration-700 pb-36 sm:pb-24"
     >
       {/* Editorial Header */}
       <motion.div 
@@ -687,18 +860,48 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
           transition={{ delay: 0.4 }}
           className="bg-slate-900/40 border border-white/5 rounded-[2rem] sm:rounded-[3rem] p-4 sm:p-8 space-y-6"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <h3 className="text-lg sm:text-2xl font-black text-white uppercase italic tracking-tight">Cumulative Profit</h3>
-              <p className="text-[9px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest">Growth trajectory over time</p>
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <button
+                  onClick={() => setChartMetric('winrate')}
+                  className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                    chartMetric === 'winrate'
+                      ? 'bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                      : 'bg-slate-950/60 text-slate-400 hover:text-white border border-white/5'
+                  }`}
+                >
+                  <Target size={12} />
+                  <span>{t('chart.winRateTrend', '🎯 Win-Rate Trend')}</span>
+                </button>
+                <button
+                  onClick={() => setChartMetric('profit')}
+                  className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                    chartMetric === 'profit'
+                      ? 'bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                      : 'bg-slate-950/60 text-slate-400 hover:text-white border border-white/5'
+                  }`}
+                >
+                  <TrendingUp size={12} />
+                  <span>{t('chart.profitTrajectory', '📈 Cumulative Profit')}</span>
+                </button>
+              </div>
+              <h3 className="text-lg sm:text-2xl font-black text-white uppercase italic tracking-tight">
+                {chartMetric === 'winrate' ? t('chart.winRateTrend', '🎯 Win-Rate Trend') : t('chart.profitTrajectory', '📈 Cumulative Profit')}
+              </h3>
+              <p className="text-[9px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                {chartMetric === 'winrate' ? t('chart.winRateSubtitle', 'Historical AI prediction accuracy trajectory over time') : t('chart.profitSubtitle', 'Growth trajectory and profit delta over time')}
+              </p>
             </div>
-            <div className="flex items-center gap-2 p-1 bg-slate-950/50 rounded-full overflow-x-auto no-scrollbar">
+
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-1.5 p-1 bg-slate-950/50 rounded-full overflow-x-auto no-scrollbar border border-white/5">
               {(['all', 'bod', 'verified', 'elite_combo', 'free'] as CategoryFilter[]).map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setChartCategory(cat)}
-                  className={`px-4 py-1.5 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                    chartCategory === cat ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'
+                  className={`px-3.5 py-1.5 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                    chartCategory === cat ? 'bg-emerald-500 text-slate-950 font-black shadow-lg' : 'text-slate-500 hover:text-white'
                   }`}
                 >
                   {cat === 'bod' ? 'Bet of the Day' : cat === 'verified' ? 'Verified' : cat === 'elite_combo' ? 'Elite Combo' : cat === 'free' ? 'Free Pick' : cat}
@@ -707,87 +910,212 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
             </div>
           </div>
 
-          <div className="h-[250px] sm:h-[350px] w-full">
+          <div className="h-[260px] sm:h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats.chartData}>
-                <defs>
-                  <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                <XAxis 
-                  dataKey="date" 
-                  stroke="#475569" 
-                  fontSize={10} 
-                  tickLine={false} 
-                  axisLine={false}
-                  tickFormatter={(val) => val.split('-').slice(1).join('/')}
-                />
-                <YAxis 
-                  stroke="#475569" 
-                  fontSize={10} 
-                  tickLine={false} 
-                  axisLine={false}
-                  tickFormatter={(val) => `$${val}`}
-                />
-                <Tooltip 
-                  content={({ active, payload, label }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="bg-slate-950 border border-white/10 p-3 rounded-xl shadow-2xl backdrop-blur-md">
-                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">{label}</p>
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between gap-8">
-                              <span className="text-[10px] font-bold text-slate-400">Cumulative Profit</span>
-                              <span className="text-xs font-black text-emerald-400 italic">${data.profit}</span>
-                            </div>
-                            <div className="flex items-center justify-between gap-8">
-                              <span className="text-[10px] font-bold text-slate-400">Daily Delta</span>
-                              <span className={`text-xs font-black italic ${data.dailyProfit >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
-                                {data.dailyProfit >= 0 ? '+' : ''}${data.dailyProfit}
+              {chartMetric === 'winrate' ? (
+                <LineChart 
+                  key={`winrate-chart-${chartCategory}`}
+                  data={stats.chartData} 
+                  margin={{ top: 15, right: 15, left: -20, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="winRateGlow" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#38bdf8" />
+                      <stop offset="50%" stopColor="#10b981" />
+                      <stop offset="100%" stopColor="#fbbf24" />
+                    </linearGradient>
+                    <linearGradient id="winRateArea" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#020617" stopOpacity={0} />
+                    </linearGradient>
+                    <filter id="forexGlowFilter" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur stdDeviation="3" result="blur" />
+                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="#475569" 
+                    fontSize={10} 
+                    tickLine={false} 
+                    axisLine={false}
+                    tickFormatter={(val) => val.split('-').slice(1).join('/')}
+                  />
+                  <YAxis 
+                    stroke="#475569" 
+                    fontSize={10} 
+                    domain={[0, 100]}
+                    tickLine={false} 
+                    axisLine={false}
+                    tickFormatter={(val) => `${val}%`}
+                  />
+                  <ReferenceLine y={50} stroke="#f43f5e" strokeDasharray="3 3" strokeWidth={1} label={{ value: '50% Baseline', fill: '#f43f5e', fontSize: 9, position: 'insideBottomLeft' }} />
+                  <ReferenceLine y={75} stroke="#10b981" strokeDasharray="3 3" strokeWidth={1} label={{ value: '75% VIP Edge', fill: '#10b981', fontSize: 9, position: 'insideTopLeft' }} />
+                  <Tooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-slate-950/95 border border-white/10 p-3.5 rounded-2xl shadow-2xl backdrop-blur-md space-y-2 min-w-[200px]">
+                            <div className="flex items-center justify-between border-b border-white/10 pb-2 gap-4">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
+                              <span className="text-[10px] font-black text-emerald-400 uppercase bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                {data.winRate}% Win Rate
                               </span>
                             </div>
-                            <div className="flex items-center justify-between gap-8">
-                              <span className="text-[10px] font-bold text-slate-400">Signals Count</span>
-                              <span className="text-xs font-black text-white italic">{data.count}</span>
+                            <div className="space-y-1.5 text-xs">
+                              <div className="flex items-center justify-between gap-6">
+                                <span className="text-[10px] font-medium text-slate-400">{t('chart.cumulativeWinRate', 'Cumulative Win Rate')}:</span>
+                                <span className="font-black text-amber-400 italic">{data.winRate}%</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-6">
+                                <span className="text-[10px] font-medium text-slate-400">{t('chart.dailyWinRate', 'Daily Win Rate')}:</span>
+                                <span className="font-black text-emerald-400 italic">{data.dailyWinRate}% ({data.wins}/{data.wins + data.losses})</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-6">
+                                <span className="text-[10px] font-medium text-slate-400">{t('chart.settledSignals', 'Settled Signals')}:</span>
+                                <span className="font-black text-white italic">{data.runningSettled} ({data.runningWins} W)</span>
+                              </div>
                             </div>
                           </div>
-                          {data.isBigWin && (
-                            <div className="mt-2 pt-2 border-t border-white/5">
-                              <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-1">
-                                <Zap size={8} /> High Yield Day
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Line 
+                    key="line-main-winrate"
+                    type="monotone" 
+                    dataKey="winRate" 
+                    name="Cumulative Win Rate (%)"
+                    stroke="url(#winRateGlow)" 
+                    strokeWidth={4} 
+                    isAnimationActive={true}
+                    animationDuration={2200}
+                    animationEasing="ease-in-out"
+                    filter="url(#forexGlowFilter)"
+                    dot={(props: any) => {
+                      const { cx, cy, index, payload } = props;
+                      const isLast = index === stats.chartData.length - 1;
+                      if (isLast) {
+                        return (
+                          <g key={`dot-last-${index}`}>
+                            <circle cx={cx} cy={cy} r={9} fill="#10b981" fillOpacity={0.25} className="animate-ping" />
+                            <circle cx={cx} cy={cy} r={6} fill="#fbbf24" stroke="#ffffff" strokeWidth={2} />
+                          </g>
+                        );
+                      }
+                      return (
+                        <circle 
+                          key={`dot-${index}`} 
+                          cx={cx} 
+                          cy={cy} 
+                          r={3.5} 
+                          fill={payload.dailyWinRate >= 60 ? '#10b981' : '#38bdf8'} 
+                          stroke="#020617" 
+                          strokeWidth={1.5} 
+                        />
                       );
-                    }
-                    return null;
-                  }}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="profit" 
-                  stroke="#10b981" 
-                  strokeWidth={4}
-                  fillOpacity={1} 
-                  fill="url(#colorProfit)" 
-                  animationDuration={2000}
-                  dot={(props: any) => {
-                    const { cx, cy, payload, index } = props;
-                    if (payload.isBigWin) {
-                      return <Dot key={`dot-${index}`} cx={cx} cy={cy} r={4} fill="#f59e0b" stroke="#000" strokeWidth={1} />;
-                    }
-                    if (payload.isLoss) {
-                      return <Dot key={`dot-${index}`} cx={cx} cy={cy} r={3} fill="#f43f5e" />;
-                    }
-                    return <circle key={`dot-${index}`} r={0} />;
-                  }}
-                />
-              </AreaChart>
+                    }}
+                    activeDot={{ r: 8, fill: '#fbbf24', strokeWidth: 3, stroke: '#ffffff' }}
+                  />
+                  <Line 
+                    key="line-daily-winrate"
+                    type="monotone" 
+                    dataKey="dailyWinRate" 
+                    name="Daily Win Rate (%)"
+                    stroke="#38bdf8" 
+                    strokeWidth={2}
+                    strokeDasharray="4 4"
+                    isAnimationActive={true}
+                    animationDuration={2200}
+                    animationEasing="ease-in-out"
+                    dot={false}
+                  />
+                </LineChart>
+              ) : (
+                <AreaChart data={stats.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="#475569" 
+                    fontSize={10} 
+                    tickLine={false} 
+                    axisLine={false}
+                    tickFormatter={(val) => val.split('-').slice(1).join('/')}
+                  />
+                  <YAxis 
+                    stroke="#475569" 
+                    fontSize={10} 
+                    tickLine={false} 
+                    axisLine={false}
+                    tickFormatter={(val) => `$${val}`}
+                  />
+                  <Tooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-slate-950 border border-white/10 p-3 rounded-xl shadow-2xl backdrop-blur-md">
+                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">{label}</p>
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between gap-8">
+                                <span className="text-[10px] font-bold text-slate-400">Cumulative Profit</span>
+                                <span className="text-xs font-black text-emerald-400 italic">${data.profit}</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-8">
+                                <span className="text-[10px] font-bold text-slate-400">Daily Delta</span>
+                                <span className={`text-xs font-black italic ${data.dailyProfit >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
+                                  {data.dailyProfit >= 0 ? '+' : ''}${data.dailyProfit}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-8">
+                                <span className="text-[10px] font-bold text-slate-400">Signals Count</span>
+                                <span className="text-xs font-black text-white italic">{data.count}</span>
+                              </div>
+                            </div>
+                            {data.isBigWin && (
+                              <div className="mt-2 pt-2 border-t border-white/5">
+                                <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-1">
+                                  <Zap size={8} /> High Yield Day
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="profit" 
+                    stroke="#10b981" 
+                    strokeWidth={4}
+                    fillOpacity={1} 
+                    fill="url(#colorProfit)" 
+                    animationDuration={2000}
+                    dot={(props: any) => {
+                      const { cx, cy, payload, index } = props;
+                      if (payload.isBigWin) {
+                        return <Dot key={`dot-${index}`} cx={cx} cy={cy} r={4} fill="#f59e0b" stroke="#000" strokeWidth={1} />;
+                      }
+                      if (payload.isLoss) {
+                        return <Dot key={`dot-${index}`} cx={cx} cy={cy} r={3} fill="#f43f5e" />;
+                      }
+                      return <circle key={`dot-${index}`} r={0} />;
+                    }}
+                  />
+                </AreaChart>
+              )}
             </ResponsiveContainer>
           </div>
         </motion.div>
@@ -840,7 +1168,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={14} />
             <input 
               type="text" 
-              placeholder="SEARCH TEAM, LEAGUE OR PACKAGE..." 
+              placeholder={t('filter.searchPlaceholder', 'SEARCH TEAM, LEAGUE OR PACKAGE...')} 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-slate-950/50 border border-white/5 rounded-full py-3.5 pl-12 pr-4 text-[10px] font-black text-white uppercase tracking-widest focus:border-emerald-500/50 outline-none transition-all placeholder:text-slate-700"
@@ -858,7 +1186,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
                     statusFilter === s ? 'bg-white text-slate-900' : 'text-slate-500 hover:text-white'
                   }`}
                 >
-                  {s}
+                  {s === 'all' ? t('filter.all', 'All') : s === 'win' ? t('filter.wins', 'Wins') : s === 'loss' ? t('filter.losses', 'Losses') : t('filter.pending', 'Pending')}
                 </button>
               ))}
             </div>
@@ -873,7 +1201,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
                     categoryFilter === c ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:text-white'
                   }`}
                 >
-                  {c === 'bod' ? 'BOD' : c === 'verified' ? 'Verified' : c === 'elite_combo' ? 'Elite Combo' : c === 'free' ? 'Free' : c}
+                  {c === 'bod' ? t('card.botdTitle', 'BOD') : c === 'verified' ? t('card.verifiedPicksTitle', 'Verified') : c === 'elite_combo' ? t('combo.title', 'Elite Combo') : c === 'free' ? t('card.freePicksTitle', 'Free') : t('filter.all', 'All')}
                 </button>
               ))}
             </div>
@@ -963,9 +1291,10 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
                       {group.type === 'multibet' && (
                         <button 
                           onClick={(e) => { e.stopPropagation(); toggleGroup(group.id); }}
-                          className="p-1.5 sm:p-2 hover:bg-white/5 rounded-full transition-colors text-slate-400 border border-white/5"
+                          className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-emerald-500/10 hover:text-emerald-400 bg-white/5 rounded-xl transition-all text-[9px] sm:text-xs font-black text-slate-300 border border-white/10 shadow-sm cursor-pointer"
                         >
-                          <ChevronDown size={15} className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          <span>{isExpanded ? 'Hide Matches' : 'Show Matches'}</span>
+                          <ChevronDown size={14} className={`transform transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                         </button>
                       )}
                     </div>
@@ -1145,22 +1474,22 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
         )}
 
         {hasMore && data && (
-          <div className="flex justify-center pt-8">
+          <div className="flex justify-center pt-8 pb-4">
             <button
               onClick={loadMore}
               disabled={loadingMore}
-              className="group relative px-10 py-4 bg-slate-900/60 border border-white/10 rounded-2xl text-[10px] font-black text-white uppercase tracking-[0.2em] hover:bg-slate-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+              className="group relative px-8 sm:px-10 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-[10px] sm:text-xs uppercase tracking-[0.2em] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_10px_30px_rgba(16,185,129,0.35)] hover:shadow-[0_15px_40px_rgba(16,185,129,0.5)] overflow-hidden cursor-pointer active:scale-95"
             >
               <div className="relative z-10 flex items-center gap-3">
                 {loadingMore ? (
                   <>
-                    <Loader2 size={14} className="animate-spin text-emerald-500" />
-                    <span>Syncing Next Chunk...</span>
+                    <Loader2 size={16} className="animate-spin text-slate-950" />
+                    <span>{t('history.syncing', 'Syncing Next Chunk...')}</span>
                   </>
                 ) : (
                   <>
-                    <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
-                    <span>Load Older Archive Data</span>
+                    <RefreshCw size={16} className="group-hover:rotate-180 transition-transform duration-500" />
+                    <span>{t('history.loadOlder', 'Load Older Archive Data')}</span>
                   </>
                 )}
               </div>
@@ -1169,7 +1498,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
                   initial={{ x: '-100%' }}
                   animate={{ x: '100%' }}
                   transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                  className="absolute bottom-0 left-0 h-0.5 w-full bg-emerald-500"
+                  className="absolute bottom-0 left-0 h-1 w-full bg-slate-950"
                 />
               )}
             </button>
@@ -1177,19 +1506,20 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({ isPremium = false }) => {
         )}
       </div>
       {/* Sticky CTA for Mobile */}
-      <div className="fixed bottom-6 left-0 w-full px-6 z-50 sm:hidden">
-        <motion.a
-          href="https://t.me/BetlifyAI"
-          target="_blank"
-          rel="noopener noreferrer"
-          initial={{ y: 100 }}
-          animate={{ y: 0 }}
-          className="flex items-center justify-center gap-3 w-full bg-emerald-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-[0_20px_50px_rgba(16,185,129,0.3)] border border-emerald-400/30"
-        >
-          <ShieldCheck size={20} />
-          🔓 Unlock Premium Signals
-        </motion.a>
-      </div>
+      {!isPremium && (
+        <div className="fixed bottom-20 left-0 w-full px-4 sm:px-6 z-[140] sm:hidden pointer-events-auto">
+          <motion.button
+            type="button"
+            onClick={onUnlockPremium}
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="flex items-center justify-center gap-3 w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-[0_10px_30px_rgba(16,185,129,0.4)] border border-emerald-400/40 transition-all cursor-pointer active:scale-95"
+          >
+            <ShieldCheck size={18} />
+            <span>🔓 {t('history.unlockPremium', 'Unlock Premium')}</span>
+          </motion.button>
+        </div>
+      )}
 
       {/* Telegram CTA Section */}
       <motion.div

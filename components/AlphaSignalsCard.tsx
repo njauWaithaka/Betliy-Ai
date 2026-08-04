@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Zap, Target, Lock as LockIcon, Unlock as UnlockIcon, Crown, ShieldCheck, Flame, Star, Radar } from 'lucide-react';
 import { cn } from '../services/utils';
+import { useTranslation } from '../services/i18n';
 
 interface AlphaSignal {
   home: string;
@@ -35,6 +36,7 @@ const TeamLogo: React.FC<{ url?: string; name: string; size?: string }> = ({ url
 );
 
 const AlphaSignalsCard: React.FC<AlphaSignalsCardProps> = ({ signals, isPremium, onSignalClick, totalVerifiedPicks }) => {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -46,28 +48,17 @@ const AlphaSignalsCard: React.FC<AlphaSignalsCardProps> = ({ signals, isPremium,
       className="w-full space-y-6 sm:space-y-8"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-1">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-              <Zap size={16} className="text-emerald-400" />
-            </div>
-            <h2 className="text-base sm:text-2xl font-black text-white italic uppercase tracking-wider">🎯 Daily Free Picks</h2>
+      {(totalVerifiedPicks !== undefined) && (
+        <div className="flex items-center justify-between px-1">
+          <div className="text-[8px] sm:text-xs font-black text-slate-500 uppercase tracking-widest">
+            {totalVerifiedPicks} {t('stats.totalPicks', 'VERIFIED PICKS')}
           </div>
-          <p className="text-[10px] sm:text-xs font-bold text-emerald-400 uppercase tracking-wider mt-1.5 ml-10">
-            FREE EXPERT AND AI-DRIVEN PREDICTIONS EVERY DAY.
-          </p>
-          {totalVerifiedPicks !== undefined && (
-            <div className="text-[8px] sm:text-xs font-black text-slate-500 uppercase tracking-widest mt-1.5 ml-10">
-              {totalVerifiedPicks} VERIFIED PICKS
-            </div>
-          )}
+          <div className="flex items-center gap-1.5">
+            <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[8px] sm:text-xs font-black text-emerald-500 uppercase tracking-widest">{t('filter.live', 'Live')}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[8px] sm:text-xs font-black text-emerald-500 uppercase tracking-widest">Live</span>
-        </div>
-      </div>
+      )}
 
       {/* Signals List */}
       <div className="space-y-4 sm:space-y-6">
@@ -84,32 +75,40 @@ const AlphaSignalsCard: React.FC<AlphaSignalsCardProps> = ({ signals, isPremium,
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 + idx * 0.15, duration: 0.6, ease: "easeOut" }}
+              whileHover={{ 
+                scale: 1.025, 
+                y: -4,
+                transition: { duration: 0.3, ease: [0.25, 1, 0.5, 1] }
+              }}
               onClick={() => onSignalClick?.(signal)}
               className={cn(
-                "bg-slate-900/40 border rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-10 hover:bg-slate-800/60 transition-all group relative overflow-hidden backdrop-blur-md shadow-2xl cursor-pointer active:scale-[0.98] min-h-[100px] touch-target",
-                isFree ? "border-white/5 hover:border-slate-500/30" : 
-                isBOTD ? "border-amber-500/20 hover:border-amber-500/50 shadow-[0_0_40px_rgba(245,158,11,0.15)]" :
-                isBanker ? "border-blue-500/20 hover:border-blue-500/50 shadow-[0_0_40px_rgba(59,130,246,0.15)]" :
-                isCombo ? "border-purple-500/20 hover:border-purple-500/50 shadow-[0_0_40px_rgba(168,85,247,0.15)]" :
-                "border-emerald-500/20 hover:border-emerald-500/50 shadow-[0_0_40px_rgba(16,185,129,0.15)]",
+                "bg-slate-900/40 border rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-10 transition-all duration-300 group relative overflow-hidden backdrop-blur-md shadow-2xl cursor-pointer active:scale-[0.98] min-h-[100px] touch-target",
+                isFree ? "border-emerald-500/30 hover:border-emerald-400 hover:shadow-[0_0_25px_rgba(16,185,129,0.35),0_10px_40px_rgba(16,185,129,0.2)] hover:bg-slate-800/90" : 
+                isBOTD ? "border-amber-500/30 hover:border-amber-400 hover:shadow-[0_0_25px_rgba(245,158,11,0.35),0_10px_40px_rgba(245,158,11,0.2)] hover:bg-slate-800/90" :
+                isBanker ? "border-blue-500/30 hover:border-blue-400 hover:shadow-[0_0_25px_rgba(59,130,246,0.35),0_10px_40px_rgba(59,130,246,0.2)] hover:bg-slate-800/90" :
+                isCombo ? "border-purple-500/30 hover:border-purple-400 hover:shadow-[0_0_25px_rgba(168,85,247,0.35),0_10px_40px_rgba(168,85,247,0.2)] hover:bg-slate-800/90" :
+                "border-emerald-500/30 hover:border-emerald-400 hover:shadow-[0_0_25px_rgba(16,185,129,0.35),0_10px_40px_rgba(16,185,129,0.2)] hover:bg-slate-800/90",
                 (signal.isPremium && !isPremium) ? 'grayscale-[0.3]' : ''
               )}
             >
+              {/* Hover Glow Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/10 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-0" />
+
               {/* Type Label */}
               <div className={cn(
-                "absolute top-0 left-0 px-3 py-1 rounded-br-xl text-[8px] sm:text-[11px] font-black uppercase italic tracking-widest z-30 flex items-center gap-1.5 shadow-lg",
-                isFree ? "bg-slate-800 text-slate-400" :
-                isBOTD ? "bg-amber-500 text-slate-950" :
-                isBanker ? "bg-blue-500 text-white" :
-                isCombo ? "bg-purple-500 text-white" :
-                "bg-emerald-500 text-slate-950"
+                "absolute top-0 left-0 px-3 py-1 rounded-br-xl text-[8px] sm:text-[11px] font-black uppercase italic tracking-widest z-30 flex items-center gap-1.5 shadow-lg group-hover:scale-105 transition-transform duration-300 origin-top-left",
+                isFree ? "bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.4)]" :
+                isBOTD ? "bg-amber-500 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.4)]" :
+                isBanker ? "bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.4)]" :
+                isCombo ? "bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]" :
+                "bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.4)]"
               )}>
                 {isFree ? <Radar size={10} /> :
                  isBOTD ? <Zap size={10} /> :
                  isBanker ? <ShieldCheck size={10} /> :
                  isCombo ? <Flame size={10} /> :
                  <Target size={10} />}
-                {isFree ? "Free" : (
+                {isFree ? t('card.free', 'Free') : (
                   (isBOTD || isBanker || isCombo || isVerified) && !signal.type?.toLowerCase().startsWith('premium') 
                     ? `Premium ${signal.type}` 
                     : signal.type
@@ -139,9 +138,9 @@ const AlphaSignalsCard: React.FC<AlphaSignalsCardProps> = ({ signals, isPremium,
                     "text-[11px] font-black uppercase tracking-[0.2em] italic mb-1",
                     isBOTD ? "text-amber-400" : isBanker ? "text-blue-400" : "text-emerald-400"
                   )}>
-                    🔒 {signal.type || 'PREMIUM PICK'}
+                    🔒 {signal.type || t('card.premiumSignal', 'PREMIUM SIGNAL')}
                   </div>
-                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Unlock to view full prediction</div>
+                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{t('card.unlockToView', 'Unlock to view full prediction')}</div>
                 </div>
               )}
               
@@ -154,7 +153,7 @@ const AlphaSignalsCard: React.FC<AlphaSignalsCardProps> = ({ signals, isPremium,
                     "bg-emerald-500/20 border-emerald-500/30 text-emerald-400"
                   )}>
                     <UnlockIcon size={8} />
-                    UNLOCKED
+                    {t('card.unlocked', 'UNLOCKED')}
                   </div>
                 </div>
               )}
@@ -176,7 +175,7 @@ const AlphaSignalsCard: React.FC<AlphaSignalsCardProps> = ({ signals, isPremium,
                       {signal.isPremium && !isPremium ? (
                         <span className={cn(
                           isBOTD ? "text-amber-400" : isBanker ? "text-blue-400" : "text-emerald-400"
-                        )}>{signal.type || 'PREMIUM SIGNAL'}</span>
+                        )}>{signal.type || t('card.premiumSignal', 'PREMIUM SIGNAL')}</span>
                       ) : (
                         <>
                           {signal.home} <span className="text-slate-600 mx-0.5 sm:mx-1">V</span> {signal.away}
@@ -185,7 +184,7 @@ const AlphaSignalsCard: React.FC<AlphaSignalsCardProps> = ({ signals, isPremium,
                     </h3>
                     <div className="text-[10px] sm:text-lg font-black text-white italic mt-1">
                       {signal.isPremium && isVerified ? (
-                        <span className="text-emerald-500/80">{totalVerifiedPicks} PICKS</span>
+                        <span className="text-emerald-500/80">{totalVerifiedPicks} {t('stats.totalPicks', 'PICKS')}</span>
                       ) : (
                         <span className={cn(isFree ? "text-emerald-400" : "text-white")}>@ {signal.odds}</span>
                       )}
@@ -195,7 +194,7 @@ const AlphaSignalsCard: React.FC<AlphaSignalsCardProps> = ({ signals, isPremium,
 
                 <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-center gap-3 border-t border-white/5 sm:border-none pt-3 sm:pt-0">
                   <div className="text-left sm:text-right">
-                    <div className="text-[8px] sm:text-[11px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Confidence</div>
+                    <div className="text-[8px] sm:text-[11px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">{t('card.confidence', 'Confidence')}</div>
                     <div className={cn(
                       "text-lg sm:text-2xl font-black italic leading-none",
                       isBOTD ? "text-amber-400" : isBanker ? "text-blue-400" : "text-emerald-400"
@@ -225,3 +224,4 @@ const AlphaSignalsCard: React.FC<AlphaSignalsCardProps> = ({ signals, isPremium,
 };
 
 export default AlphaSignalsCard;
+

@@ -32,7 +32,16 @@ export const PerformanceTracker: React.FC<PerformanceTrackerProps> = ({
     });
 
     // Filter for resolved picks with status 'win' or 'loss'
-    const resolved = sorted.filter(p => p.status === 'win' || p.status === 'loss');
+    const resolved = sorted.map(p => {
+      const s = String(p.status || (p as any).result || (p as any).outcome || '').toLowerCase();
+      let normStatus: 'win' | 'loss' | 'pending' = 'pending';
+      if (s.includes('win') || s.includes('won') || s.includes('green') || s.includes('verified')) {
+        normStatus = 'win';
+      } else if (s.includes('loss') || s.includes('lost') || s.includes('red')) {
+        normStatus = 'loss';
+      }
+      return { ...p, status: normStatus };
+    }).filter(p => p.status === 'win' || p.status === 'loss');
     
     // Take the last 10 resolved premium picks
     const last10 = resolved.slice(0, 10);

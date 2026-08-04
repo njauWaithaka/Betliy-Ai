@@ -85,8 +85,12 @@ const mapRawPick = (p: any, defaultLeague = 'Elite Pro', defaultDate = '', packa
 
 export const fetchBOD = async (): Promise<FirebasePick[]> => {
   try {
-    const bodRef = ref(betrixDb, 'Bets/Bo');
-    const snapshot = await get(bodRef);
+    let bodRef = ref(betrixDb, 'Bets/Bod');
+    let snapshot = await get(bodRef);
+    if (!snapshot.exists()) {
+      bodRef = ref(betrixDb, 'Bets/Bo');
+      snapshot = await get(bodRef);
+    }
     const data = snapshot.exists() ? snapshot.val() : null;
     if (!data) return [];
     const rawPicks = Array.isArray(data) ? data : (data.home || data.homeTeam || data.match ? [data] : Object.values(data));
@@ -568,14 +572,14 @@ export function processBet(bet: any, isPremium: boolean, mode: "display" | "hist
   cloned.kickoff = cloned.kickoff || cloned.time || '';
 
   // 🔥 STATUS RULE (MANDATORY)
-  let finalStatus = cloned.status || 'pending';
-  if (!cloned.free && !cloned.premium) {
-    finalStatus = cloned.status || 'pending';
-  } else {
-    if (isPremium) {
-      finalStatus = cloned.premium?.status || 'pending';
+  let finalStatus = cloned.status || cloned.premium?.status || cloned.free?.status || 'pending';
+  if (cloned.free || cloned.premium) {
+    if (isPremium && cloned.premium?.status) {
+      finalStatus = cloned.premium.status;
+    } else if (!isPremium && cloned.free?.status) {
+      finalStatus = cloned.free.status;
     } else {
-      finalStatus = cloned.free?.status || 'pending';
+      finalStatus = cloned.status || cloned.premium?.status || cloned.free?.status || 'pending';
     }
   }
   cloned.status = finalStatus;
@@ -619,14 +623,15 @@ export function processBet(bet: any, isPremium: boolean, mode: "display" | "hist
 export const fetchAndProcessAllBets = async (isPremium: boolean): Promise<BetsDataOutput> => {
   try {
     // Fetch individual sub-paths directly from RTDB
-    const [boSnap, eliteSnap, verifiedSnap, freeSnap] = await Promise.all([
+    const [bodSnap, boSnapFallback, eliteSnap, verifiedSnap, freeSnap] = await Promise.all([
+      get(ref(betrixDb, 'Bets/Bod')),
       get(ref(betrixDb, 'Bets/Bo')),
       get(ref(betrixDb, 'Bets/EliteCombo')),
       get(ref(betrixDb, 'Bets/Verified')),
       get(ref(betrixDb, 'Bets/FreeBets'))
     ]);
 
-    const boData = boSnap.exists() ? boSnap.val() : null;
+    const boData = (bodSnap.exists() && bodSnap.val()) ? bodSnap.val() : (boSnapFallback.exists() ? boSnapFallback.val() : null);
     const eliteData = eliteSnap.exists() ? eliteSnap.val() : null;
     const verifiedData = verifiedSnap.exists() ? verifiedSnap.val() : null;
     const freeData = freeSnap.exists() ? freeSnap.val() : null;

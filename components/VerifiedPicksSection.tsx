@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../services/utils';
 import { FirebasePick } from '../types';
+import { useTranslation } from '../services/i18n';
 
 interface VerifiedPicksSectionProps {
   picks: FirebasePick[];
@@ -30,6 +31,7 @@ interface VerifiedPicksSectionProps {
 }
 
 const RiskBadge: React.FC<{ level: string }> = ({ level }) => {
+  const { t } = useTranslation();
   const colors = {
     Low: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
     Medium: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
@@ -37,9 +39,13 @@ const RiskBadge: React.FC<{ level: string }> = ({ level }) => {
   };
   const colorClass = colors[level as keyof typeof colors] || colors.Medium;
 
+  const translatedLevel = level === 'Low' ? t('card.lowRisk', 'Low') :
+    level === 'High' ? t('card.highRisk', 'High') :
+    t('card.medRisk', 'Medium');
+
   return (
     <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${colorClass}`}>
-      {level} Risk
+      {translatedLevel}
     </span>
   );
 };
@@ -52,6 +58,7 @@ const VerifiedPickCard: React.FC<{
   isSelected: boolean;
   onViewAnalysis: () => void;
 }> = ({ pick, isPremium, onAdd, onRemove, isSelected, onViewAnalysis }) => {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (pick.locked) {
@@ -59,7 +66,7 @@ const VerifiedPickCard: React.FC<{
       <div className="bg-slate-900/40 border border-white/5 rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-10 relative overflow-hidden flex flex-col gap-6">
         <div className="absolute top-0 left-0 px-4 py-1.5 bg-slate-800 text-slate-400 rounded-br-2xl text-[9px] sm:text-[11px] font-black uppercase italic tracking-widest z-30 flex items-center gap-2">
           <Lock size={12} />
-          Premium Pick
+          {t('card.lockedVip', 'Premium Pick')}
         </div>
         
         {/* Header: League + Time */}
@@ -86,12 +93,13 @@ const VerifiedPickCard: React.FC<{
         {/* Locked Banner */}
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 text-center mt-2">
           <span className="text-xs sm:text-sm font-black text-amber-400 uppercase tracking-wider flex items-center justify-center gap-2">
-            🔒 Locked Premium Pick — Upgrade to Unlock
+            🔒 {t('card.lockedNotice', 'Locked Premium Pick — Upgrade to Unlock')}
           </span>
         </div>
       </div>
     );
   }
+
 
   const confidenceColor = (conf: number) => {
     if (conf >= 85) return 'text-blue-400';
@@ -104,10 +112,18 @@ const VerifiedPickCard: React.FC<{
   return (
     <motion.div 
       layout
-      className="bg-slate-900/40 border border-white/5 rounded-2xl sm:rounded-[2.5rem] overflow-hidden hover:border-emerald-500/30 transition-colors group relative pt-8"
+      whileHover={{ 
+        scale: 1.025, 
+        y: -4,
+        transition: { duration: 0.3, ease: [0.25, 1, 0.5, 1] }
+      }}
+      className="bg-slate-900/40 border border-emerald-500/30 rounded-2xl sm:rounded-[2.5rem] overflow-hidden hover:border-emerald-400 hover:shadow-[0_0_25px_rgba(16,185,129,0.35),0_12px_45px_rgba(16,185,129,0.2)] hover:bg-slate-900/80 transition-all duration-300 group relative pt-8"
     >
+      {/* Ambient Radial Hover Glow */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[50px] rounded-full -mr-16 -mt-16 opacity-0 group-hover:opacity-100 group-hover:scale-125 transition-all duration-500 pointer-events-none" />
+
       {/* Type Label */}
-      <div className="absolute top-0 left-0 px-4 py-1.5 bg-emerald-500 text-slate-950 rounded-br-2xl text-[9px] sm:text-[11px] font-black uppercase italic tracking-widest z-30 flex items-center gap-2 shadow-lg">
+      <div className="absolute top-0 left-0 px-4 py-1.5 bg-emerald-500 text-slate-950 rounded-br-2xl text-[9px] sm:text-[11px] font-black uppercase italic tracking-widest z-30 flex items-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.4)] group-hover:scale-105 transition-transform duration-300 origin-top-left">
         <Target size={12} />
         {pick.package || 'Verified Pick'}
       </div>
@@ -163,7 +179,7 @@ const VerifiedPickCard: React.FC<{
         <div className="bg-slate-950/50 rounded-2xl p-4 border border-white/5">
           <div className="flex items-center gap-2.5 mb-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[11px] sm:text-xs font-black text-slate-500 uppercase tracking-widest">Neural Pick</span>
+            <span className="text-[11px] sm:text-xs font-black text-slate-500 uppercase tracking-widest">{t('card.recommendedBet', 'Recommended Pick')}</span>
           </div>
           <div className="text-base sm:text-xl font-black text-emerald-400 uppercase tracking-tight">{pick.tip}</div>
         </div>
@@ -171,11 +187,11 @@ const VerifiedPickCard: React.FC<{
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
-            <span className="text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest">Confidence</span>
+            <span className="text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest">{t('card.aiConfidence', 'AI Confidence')}</span>
             <div className={`text-sm sm:text-lg font-black ${confidenceColor(confidence)}`}>{confidence}%</div>
           </div>
           <div className="flex flex-col gap-1.5 items-end">
-            <span className="text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest">Risk Level</span>
+            <span className="text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest">{t('card.riskLevel', 'Risk Level')}</span>
             <RiskBadge level={pick.riskFactor || 'Medium'} />
           </div>
         </div>
@@ -184,7 +200,7 @@ const VerifiedPickCard: React.FC<{
         <div className="pt-4 border-t border-white/5">
           <div className="flex items-center gap-2.5 mb-3">
             <TrendingUp size={14} className="text-blue-400" />
-            <span className="text-[11px] sm:text-xs font-black text-slate-400 uppercase tracking-widest">Quick Edge</span>
+            <span className="text-[11px] sm:text-xs font-black text-slate-400 uppercase tracking-widest">{t('card.quickEdge', 'Quick Edge')}</span>
           </div>
           <ul className="space-y-2.5">
             {(pick.preview_ui?.bullet_points || []).slice(0, 2).map((point: string, i: number) => (
@@ -202,7 +218,7 @@ const VerifiedPickCard: React.FC<{
           className="w-full flex items-center justify-center gap-2 py-2 text-[10px] sm:text-xs font-black text-slate-500 uppercase hover:text-slate-300 transition-colors min-h-[44px]"
         >
           {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          {isExpanded ? 'Full Neural Breakdown' : 'Full Neural Breakdown'}
+          {t('card.viewAnalysis', 'Full Neural Breakdown')}
         </button>
 
         {/* Expanded Content */}
@@ -244,6 +260,7 @@ const VerifiedPicksSection: React.FC<VerifiedPicksSectionProps> = ({
   selectedPicks,
   onViewAnalysis
 }) => {
+  const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<'single' | 'combine'>('single');
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -275,9 +292,9 @@ const VerifiedPicksSection: React.FC<VerifiedPicksSectionProps> = ({
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]" />
-              <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tighter italic">Verified Picks</h2>
+              <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tighter italic">{t('card.verifiedPicksTitle', '🤖 AI Verified Picks')}</h2>
             </div>
-            <p className="text-sm sm:text-base text-slate-400 font-bold italic">High-confidence single bets analyzed by the AI system.</p>
+            <p className="text-sm sm:text-base text-slate-400 font-bold italic">{t('card.verifiedPicksDesc', '6–10 premium AI picks with detailed analysis.')}</p>
           </div>
         </div>
 

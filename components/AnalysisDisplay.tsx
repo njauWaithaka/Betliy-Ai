@@ -5,6 +5,7 @@ import { Target, Zap, ShieldCheck, Flame, Star, Cpu, TrendingUp, AlertTriangle, 
 import { cn } from '../services/utils';
 import { shortenTeamName } from '../constants';
 import { LineChart, Line, ResponsiveContainer, YAxis, XAxis, Tooltip, AreaChart, Area } from 'recharts';
+import { useTranslation } from '../services/i18n';
 
 interface AnalysisDisplayProps {
   analysis: BetAnalysis;
@@ -108,6 +109,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   onPremiumAction, 
   totalVerifiedPicks 
 }) => {
+  const { t } = useTranslation();
   const interpolatedConfidence = useNeuralInterpolation(analysis.confidence, 2500);
   const containerRef = useRef<HTMLDivElement>(null);
   const isLocked = !isPremium && analysis.pickType && analysis.pickType !== 'Free Pick' && analysis.pickType !== 'Alpha Signal';
@@ -161,14 +163,14 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
               <span className="hidden sm:inline">{String(analysis.homeTeam)} <span className="text-slate-600">v</span> {String(analysis.awayTeam)}</span>
             </h4>
             <div className="flex items-center gap-1.5 sm:gap-3">
-              <span className="text-[7px] sm:text-[10px] font-black text-emerald-400 italic uppercase">{isLocked ? '🔒 PREMIUM' : analysis.tip}</span>
+              <span className="text-[7px] sm:text-[10px] font-black text-emerald-400 italic uppercase">{isLocked ? `🔒 ${t('card.premiumPick', 'PREMIUM')}` : analysis.tip}</span>
               <span className="text-[7px] sm:text-[10px] font-bold text-slate-500">@ {analysis.odds}</span>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3 sm:gap-8 shrink-0">
           <div className="text-right">
-            <div className="text-[6px] sm:text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">CONFIDENCE</div>
+            <div className="text-[6px] sm:text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">{t('card.confidence', 'CONFIDENCE')}</div>
             <div className="text-xs sm:text-lg font-black text-emerald-400 italic tabular-nums leading-none mt-0.5">{Math.round(interpolatedConfidence)}%</div>
           </div>
         </div>
@@ -377,15 +379,18 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
                      </div>
                    </div>
                     <div className="flex flex-col gap-2 sm:gap-4 w-full sm:w-auto shrink-0 border-t border-white/5 sm:border-none pt-4 sm:pt-0">
-                      {/* Telegram CTA */}
+                      {/* BetWinner Ad CTA */}
                       <a 
-                        href="https://t.me/BetlifyAI" 
+                        href="https://betwinner.com" 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#229ED9] hover:bg-[#229ED9]/90 text-white rounded-lg sm:rounded-2xl font-black uppercase italic text-[9px] sm:text-sm transition-all shadow-xl shadow-blue-500/20 group min-h-[44px]"
+                        className="flex items-center justify-center gap-2.5 px-4 py-2.5 bg-[#07462B] hover:bg-[#0a5c39] text-white border border-emerald-500/30 rounded-lg sm:rounded-2xl font-black uppercase italic text-[10px] sm:text-sm transition-all shadow-xl shadow-emerald-950/50 group min-h-[44px] active:scale-95"
                       >
-                        <Send size={14} className="group-hover:scale-110 transition-transform" />
-                        Join Telegram
+                        <span className="w-6 h-6 rounded-md bg-[#facc15] text-[#07462B] font-extrabold text-[10px] sm:text-xs flex items-center justify-center not-italic tracking-tighter shadow-sm shrink-0 border border-emerald-900/20">
+                          BW
+                        </span>
+                        <span className="tracking-wide">BetNow</span>
+                        <ExternalLink size={14} className="group-hover:translate-x-0.5 transition-transform text-emerald-300" />
                       </a>
 
                       {/* Share Analysis */}
@@ -412,27 +417,31 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
                </div>
 
                {/* Signal Graph */}
-               <SignalGraph signal={analysis.signal} />
+               {isPremium && <SignalGraph signal={analysis.signal} />}
             </div>
 
             {/* 2.5) METRICS GRID */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
-              <MetricGauge label="Neural Confidence" value={analysis.aiConfidence || analysis.confidence} color="text-emerald-400" />
-              <MetricGauge label="Market Volatility" value={analysis.marketVolatility || 30} color="text-amber-400" />
-              <MetricGauge label="Value Score" value={analysis.valueScore ? Math.round(analysis.valueScore * 10) : 75} color="text-blue-400" />
-            </div>
+            {isPremium && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                <MetricGauge label="Neural Confidence" value={analysis.aiConfidence || analysis.confidence} color="text-emerald-400" />
+                <MetricGauge label="Market Volatility" value={analysis.marketVolatility || 30} color="text-amber-400" />
+                <MetricGauge label="Value Score" value={analysis.valueScore ? Math.round(analysis.valueScore * 10) : 75} color="text-blue-400" />
+              </div>
+            )}
 
             {/* 3) QUICK INSIGHTS STRIP */}
-            <div className="mb-4 sm:mb-6">
-               <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                 {(analysis.bulletPoints || analysis.keyStats || []).map((stat, i) => (
-                   <div key={i} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-slate-900/60 border border-white/5 rounded-full text-[8px] sm:text-[10px] font-bold text-slate-300 italic hover:border-blue-500/30 transition-colors">
-                     <div className="w-1 h-1 rounded-full bg-blue-400" />
-                     {stat}
-                   </div>
-                 ))}
-               </div>
-            </div>
+            {isPremium && (
+              <div className="mb-4 sm:mb-6">
+                 <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                   {(analysis.bulletPoints || analysis.keyStats || []).map((stat, i) => (
+                     <div key={i} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-slate-900/60 border border-white/5 rounded-full text-[8px] sm:text-[10px] font-bold text-slate-300 italic hover:border-blue-500/30 transition-colors">
+                       <div className="w-1 h-1 rounded-full bg-blue-400" />
+                       {stat}
+                     </div>
+                   ))}
+                 </div>
+              </div>
+            )}
 
             {/* 4) SUMMARY ANALYSIS */}
             <div className={`space-y-4 relative ${isLocked ? 'blur-md select-none pointer-events-none' : ''}`}>
@@ -441,27 +450,27 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
                   <div className="w-16 h-16 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.3)] mb-4">
                     <LockIcon size={32} className="text-amber-400" />
                   </div>
-                  <div className="text-sm font-black text-white uppercase tracking-widest mb-2">Premium Analysis Locked</div>
+                  <div className="text-sm font-black text-white uppercase tracking-widest mb-2">{t('analysis.premiumLocked', 'Premium Analysis Locked')}</div>
                   <p className="text-[10px] font-medium text-slate-400 uppercase max-w-xs mb-6 leading-relaxed">
-                    Unlock premium to access the full neural breakdown, statistical validation, and market edge for this pick.
+                    {t('analysis.unlockDesc', 'Unlock premium to access the full neural breakdown, statistical validation, and market edge for this pick.')}
                   </p>
                   <button 
                     onClick={onPremiumAction}
                     className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl font-black uppercase italic text-xs transition-all shadow-lg shadow-emerald-500/20 pointer-events-auto"
                   >
-                    Unlock Analysis
+                    {t('analysis.unlockBtn', 'Unlock Analysis')}
                   </button>
                 </div>
               )}
               <div className="bg-slate-900/40 border border-white/5 p-4 sm:p-6 rounded-xl sm:rounded-2xl">
                 <div className="flex items-center gap-2 mb-3 sm:mb-4">
                   <Cpu size={12} className="text-cyan-400 sm:w-4 sm:h-4" />
-                  <span className="text-[8px] sm:text-[10px] font-black text-cyan-400 uppercase tracking-widest">Neural Summary</span>
+                  <span className="text-[8px] sm:text-[10px] font-black text-cyan-400 uppercase tracking-widest">{t('analysis.summary', 'Neural Summary')}</span>
                 </div>
                 <p className="text-[10px] sm:text-[12px] font-bold text-slate-400 leading-relaxed italic whitespace-pre-wrap">
                   {!isPremium ? (
                     <span className="flex items-center gap-2 text-amber-500/80 font-black tracking-widest">
-                      <LockIcon size={12} className="animate-pulse" /> LOCKED PREMIUM NEURAL SUMMARY
+                      <LockIcon size={12} className="animate-pulse" /> {t('analysis.lockedSummary', 'LOCKED PREMIUM NEURAL SUMMARY')}
                     </span>
                   ) : (
                     analysis.shortReason
@@ -500,7 +509,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
               <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-white/5 flex flex-wrap gap-1.5 sm:gap-2">
                 <div className="w-full flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
                   <Globe size={10} className="text-slate-500 sm:w-3 sm:h-3" />
-                  <span className="text-[7px] sm:text-[8px] font-black text-slate-500 uppercase tracking-widest">Neural Data Sources</span>
+                  <span className="text-[7px] sm:text-[8px] font-black text-slate-500 uppercase tracking-widest">{t('analysis.sources', 'Neural Data Sources')}</span>
                 </div>
                 {analysis.sources.slice(0, 3).map((source, i) => (
                   <a 

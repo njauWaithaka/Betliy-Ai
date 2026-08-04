@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { FixtureData, BetType } from '../types';
 import { Target, Cpu, ChevronRight, Zap } from 'lucide-react';
+import { useTranslation } from '../services/i18n';
 
 interface BettingFormProps {
   onSubmit: (data: FixtureData) => void;
@@ -9,6 +10,7 @@ interface BettingFormProps {
 }
 
 const BettingForm: React.FC<BettingFormProps> = ({ onSubmit, loading }) => {
+  const { t } = useTranslation();
   const [homeTeam, setHomeTeam] = useState('');
   const [awayTeam, setAwayTeam] = useState('');
   const [betType, setBetType] = useState<BetType>(BetType.FULL_TIME_RESULT);
@@ -34,12 +36,12 @@ const BettingForm: React.FC<BettingFormProps> = ({ onSubmit, loading }) => {
         <div className="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
           <Target className="text-emerald-400" size={18} />
         </div>
-        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">CUSTOM NEURAL SCAN</h3>
+        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">{t('form.customScan', 'CUSTOM NEURAL SCAN')}</h3>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Home Matrix</label>
+          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('form.homeTeam', 'Home Team')}</label>
           <input 
             type="text" 
             value={homeTeam} 
@@ -50,7 +52,7 @@ const BettingForm: React.FC<BettingFormProps> = ({ onSubmit, loading }) => {
           />
         </div>
         <div className="space-y-2">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Away Matrix</label>
+          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('form.awayTeam', 'Away Team')}</label>
           <input 
             type="text" 
             value={awayTeam} 
@@ -63,7 +65,7 @@ const BettingForm: React.FC<BettingFormProps> = ({ onSubmit, loading }) => {
       </div>
 
       <div className="space-y-2">
-        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Bet Isolation Vector</label>
+        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('form.betType', 'Bet Type')}</label>
         <select 
           value={betType} 
           onChange={(e) => setBetType(e.target.value as BetType)}
@@ -86,7 +88,7 @@ const BettingForm: React.FC<BettingFormProps> = ({ onSubmit, loading }) => {
           ) : (
             <Zap size={20} className="group-hover:scale-125 transition-transform" />
           )}
-          {loading ? "INITIALIZING NEURAL LINK..." : "EXECUTE CUSTOM SCAN"}
+          {loading ? t('form.initializing', 'INITIALIZING NEURAL LINK...') : t('form.executeScan', 'EXECUTE CUSTOM SCAN')}
         </span>
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
       </button>

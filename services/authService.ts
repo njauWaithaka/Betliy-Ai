@@ -181,7 +181,7 @@ class AuthService {
 
   isTelegramMiniApp(): boolean {
     const isTG = !!(window as any).Telegram?.WebApp?.initData;
-    console.log("Telegram WebApp detection:", isTG ? "SUCCESS" : "FAILURE");
+    console.log("Telegram WebApp environment:", isTG ? "Detected" : "Standard Web");
     return isTG;
   }
 
@@ -189,9 +189,7 @@ class AuthService {
     const webApp = (window as any).Telegram?.WebApp;
     const user = webApp?.initDataUnsafe?.user || null;
     if (user) {
-      console.log("Telegram user found in initDataUnsafe:", user.id);
-    } else {
-      console.warn("Telegram user missing in initDataUnsafe.");
+      console.log("Telegram user found:", user.id);
     }
     return user;
   }

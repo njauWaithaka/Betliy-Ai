@@ -1,14 +1,16 @@
 import React from 'react';
 import { TrendingUp, Target, Zap, Activity, BarChart3 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { cn } from '../services/utils';
 import { ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { useTranslation } from '../services/i18n';
 
 interface NeuralPerformanceStatsProps {
   className?: string;
 }
 
 const NeuralPerformanceStats: React.FC<NeuralPerformanceStatsProps> = ({ className }) => {
+  const { t } = useTranslation();
   // Simulated live signal data
   const signalData = [
     { v: 40 }, { v: 60 }, { v: 45 }, { v: 70 }, { v: 55 }, { v: 80 }, { v: 65 }, { v: 90 }, { v: 75 }, { v: 85 }
@@ -16,34 +18,35 @@ const NeuralPerformanceStats: React.FC<NeuralPerformanceStatsProps> = ({ classNa
 
   const stats = [
     { 
-      label: 'Signal Accuracy', 
+      label: t('stats.winRate', 'Win Rate'), 
       value: '94.2%', 
       icon: Target, 
       color: 'text-emerald-400',
       bg: 'bg-emerald-500/10'
     },
     { 
-      label: 'Avg. ROI', 
+      label: t('stats.roi', 'Avg ROI'), 
       value: '+28.5%', 
       icon: TrendingUp, 
       color: 'text-blue-400',
       bg: 'bg-blue-500/10'
     },
     { 
-      label: 'Neural Confidence', 
+      label: t('card.aiConfidence', 'Neural Confidence'), 
       value: 'High', 
       icon: Zap, 
       color: 'text-amber-400',
       bg: 'bg-amber-500/10'
     },
     { 
-      label: 'Active Signals', 
+      label: t('stats.totalPicks', 'Verified Picks'), 
       value: '12', 
       icon: Activity, 
       color: 'text-purple-400',
       bg: 'bg-purple-500/10'
     }
   ];
+
 
   return (
     <div className={cn("space-y-4", className)}>

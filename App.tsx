@@ -3,6 +3,7 @@ import { AutoTranslate } from './components/AutoTranslate';
 import AnalysisDisplay from './components/AnalysisDisplay';
 import PaymentModal from './components/PaymentModal';
 import LoginModal from './components/LoginModal';
+import { SettingsModal } from './components/SettingsModal';
 import MatchHistory from './components/MatchHistory';
 import SmartLoader from './components/SmartLoader';
 import NeuralChatInput from './components/NeuralChatInput';
@@ -11,7 +12,6 @@ import { authService, UserProfile } from './services/authService';
 import AlphaSignalsCard from './components/AlphaSignalsCard';
 import EliteComboCard from './components/EliteComboCard';
 import VerifiedPicksSection from './components/VerifiedPicksSection';
-import { PerformanceTracker } from './components/PerformanceTracker';
 import { FixtureData, Message, BetType, BetAnalysis, AlphaSignal, EliteComboPick, FirebasePick } from './types';
 import { ASSETS, shortenTeamName } from './constants';
 import { usePremiumHistory, PremiumHistoryData, PremiumPackage, PremiumPick } from './services/premiumHistoryHook';
@@ -22,6 +22,7 @@ import {
   Cell
 } from 'recharts';
 import { useAuth } from './services/AuthContext';
+import { useTranslation } from './services/i18n';
 import { Bot, User, Zap, ChevronRight, X, TrendingUp, Cpu, Activity, Globe, Database, BrainCircuit, Search, Layers, Sparkles, BarChart3, ArrowUpRight, ShieldCheck, Star, Timer, CheckCircle, Target, Unlock, Users, Loader2, Radar, CreditCard, LayoutDashboard, Terminal, Menu, CheckCircle2, XCircle, History, Trophy, AlertTriangle, RefreshCw, PieChart as PieChartIcon, Send, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 // @ts-ignore
@@ -37,37 +38,40 @@ const TeamLogo: React.FC<{ url?: string; name: string; size?: string }> = ({ url
   </div>
 );
 
-const BetwinnerBanner: React.FC = () => (
-  <a 
-    href="https://betwinner.com" 
-    target="_blank" 
-    rel="noopener noreferrer"
-    className="block p-6 bg-gradient-to-br from-emerald-600 via-emerald-800 to-slate-950 rounded-[2rem] border-2 border-emerald-400/30 shadow-2xl overflow-hidden relative group transition-all hover:scale-[1.02]"
-  >
-    <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-400/10 blur-[60px] rounded-full -mr-16 -mt-16 animate-pulse" />
-    
-    <div className="relative z-10 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="px-3 py-1 bg-emerald-500 text-slate-950 text-[8px] font-black uppercase italic rounded-full shadow-lg shadow-emerald-500/20">PARTNER OFFER</div>
-        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md">
-          <ArrowUpRight size={16} className="text-white" />
-        </div>
-      </div>
+const BetwinnerBanner: React.FC = () => {
+  const { t } = useTranslation();
+  return (
+    <a 
+      href="https://betwinner.com" 
+      target="_blank" 
+      rel="noopener noreferrer"
+      className="block p-6 bg-gradient-to-br from-emerald-600 via-emerald-800 to-slate-950 rounded-[2rem] border-2 border-emerald-400/30 shadow-2xl overflow-hidden relative group transition-all hover:scale-[1.02]"
+    >
+      <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-400/10 blur-[60px] rounded-full -mr-16 -mt-16 animate-pulse" />
       
-      <div>
-        <div className="text-lg sm:text-xl font-black text-white italic tracking-tighter uppercase leading-none mb-1">100% BONUS</div>
-        <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest opacity-80">ON YOUR FIRST DEPOSIT</div>
-      </div>
+      <div className="relative z-10 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="px-3 py-1 bg-emerald-500 text-slate-950 text-[8px] font-black uppercase italic rounded-full shadow-lg shadow-emerald-500/20">{t('banner.partnerOffer', 'PARTNER OFFER')}</div>
+          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md">
+            <ArrowUpRight size={16} className="text-white" />
+          </div>
+        </div>
+        
+        <div>
+          <div className="text-lg sm:text-xl font-black text-white italic tracking-tighter uppercase leading-none mb-1">100% BONUS</div>
+          <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest opacity-80">{t('banner.firstDeposit', 'ON YOUR FIRST DEPOSIT')}</div>
+        </div>
 
-      <div className="pt-2">
-        <div className="w-full py-3 bg-white text-slate-950 rounded-xl font-black uppercase italic text-xs flex items-center justify-center gap-2 group-hover:bg-emerald-400 transition-colors">
-          BET ON BETWINNER
+        <div className="pt-2">
+          <div className="w-full py-3 bg-white text-slate-950 rounded-xl font-black uppercase italic text-xs flex items-center justify-center gap-2 group-hover:bg-emerald-400 transition-colors">
+            {t('banner.betOnBetwinner', 'BET ON BETWINNER')}
+          </div>
         </div>
       </div>
-    </div>
-  </a>
-);
+    </a>
+  );
+};
 
 const TypingText: React.FC<{ text: string; speed?: number }> = ({ text, speed = 20 }) => {
   const [displayedText, setDisplayedText] = useState('');
@@ -87,19 +91,20 @@ const TypingText: React.FC<{ text: string; speed?: number }> = ({ text, speed = 
 };
 
 const HistoryCard: React.FC<{ pick: FirebasePick }> = ({ pick }) => {
+  const { t } = useTranslation();
   const statusLabel = useMemo(() => {
-    if (pick.status === 'win') return 'Signal Confirmed';
-    if (pick.status === 'loss') return 'Model Misread';
-    if (pick.status === 'pending') return 'Awaiting Resolution';
-    return 'Partial Outcome';
-  }, [pick.status]);
+    if (pick.status === 'win') return t('history.signalConfirmed', 'Signal Confirmed');
+    if (pick.status === 'loss') return t('history.modelMisread', 'Model Misread');
+    if (pick.status === 'pending') return t('history.awaitingResolution', 'Awaiting Resolution');
+    return t('history.partialOutcome', 'Partial Outcome');
+  }, [pick.status, t]);
 
   return (
     <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-4 space-y-3 hover:border-emerald-500/20 transition-all group relative overflow-hidden backdrop-blur-sm">
       <div className="flex justify-between items-start">
         <div className="space-y-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-[6px] font-black text-emerald-400 uppercase tracking-widest">{pick.package || 'Elite Signal'}</span>
+            <span className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-[6px] font-black text-emerald-400 uppercase tracking-widest">{pick.package || t('card.eliteSignal', 'Elite Signal')}</span>
           </div>
           <h4 className="text-[11px] sm:text-[13px] font-bold text-white tracking-tight truncate w-full max-w-full">
             <span className="sm:hidden">{shortenTeamName(pick.home || '')} {pick.score || 'FT'} {shortenTeamName(pick.away || '')}</span>
@@ -119,7 +124,7 @@ const HistoryCard: React.FC<{ pick: FirebasePick }> = ({ pick }) => {
         <div className="text-[11px] font-medium text-slate-400">
           {pick.home} @ {pick.odds}
         </div>
-        <div className="text-[10px] font-medium text-slate-600">Stake: ${pick.stake} • Confidence: {pick.confidence}%</div>
+        <div className="text-[10px] font-medium text-slate-600">{t('history.stake', 'Stake')}: ${pick.stake} • {t('card.confidence', 'Confidence')}: {pick.confidence}%</div>
       </div>
 
       <div className="flex justify-end">
@@ -133,8 +138,10 @@ const HistoryCard: React.FC<{ pick: FirebasePick }> = ({ pick }) => {
 
 // Removed chart components and history dashboard for simplicity as per user request.
 const App: React.FC = () => {
+  const { t } = useTranslation();
   const { user, isAuthenticated, isLoading, error, login: setAuthUser, logout } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [isPremium, setIsPremium] = useState(() => localStorage.getItem('betlify_is_premium') === 'true');
 
   useEffect(() => {
@@ -301,11 +308,17 @@ const App: React.FC = () => {
         setFeaturedPick(picks[0]);
       }
 
-      const allHistory = [
+      let allHistory = [
         ...(processed.bet_of_the_day.history || []).map(mapProcessedBetToFirebasePick),
         ...(processed.verified.history || []).map(mapProcessedBetToFirebasePick),
         ...(processed.elite_combo.history || []).map(mapProcessedBetToFirebasePick)
       ];
+
+      if (allHistory.length === 0) {
+        const fallbackHistory = await fetchPremiumHistory(30);
+        allHistory = fallbackHistory;
+      }
+
       setPremiumHistory(allHistory);
     } catch (error) {
       console.error("Initial load failed:", error);
@@ -781,8 +794,8 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="flex flex-col items-center gap-1">
-          <span className="text-xs font-black text-white uppercase tracking-[0.3em] animate-pulse">Neural Link Initializing</span>
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Authenticating Session...</span>
+          <span className="text-xs font-black text-white uppercase tracking-[0.3em] animate-pulse">{t('auth.initializing', 'Neural Link Initializing')}</span>
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('auth.authenticating', 'Authenticating Session...')}</span>
         </div>
       </div>
     );
@@ -819,6 +832,14 @@ const App: React.FC = () => {
         }}
       />
       <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} onLoginSuccess={handleLoginSuccess} />
+      <SettingsModal 
+        isOpen={showSettingsModal} 
+        onClose={() => setShowSettingsModal(false)} 
+        user={user} 
+        isPremium={isPremium} 
+        onLogout={logout} 
+        onUpgrade={() => setShowPaymentModal(true)} 
+      />
       
       {!isTelegram && (
         <motion.header 
@@ -838,58 +859,81 @@ const App: React.FC = () => {
             </div>
             <h1 className="text-xs sm:text-base font-black tracking-tighter text-white italic uppercase leading-none">BETL<span className="text-[#00FFA3]">IFY</span></h1>
             
-            <div className="hidden md:flex items-center gap-6 ml-8">
-              <button 
+            <div className="hidden md:flex items-center gap-4 ml-8">
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setView('dashboard')} 
-                className={`text-[9px] font-black uppercase tracking-widest transition-all ${view === 'dashboard' ? 'text-emerald-500' : 'text-slate-500 hover:text-white'}`}
+                className={`relative px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${view === 'dashboard' ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
               >
-                Analysis
-              </button>
-              <button 
+                {t('nav.terminal', 'Analysis')}
+                {view === 'dashboard' && (
+                  <motion.div layoutId="headerNavTabIndicator" className="absolute bottom-0 left-2 right-2 h-0.5 bg-emerald-500 rounded-full" />
+                )}
+              </motion.button>
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setView('history')} 
-                className={`text-[9px] font-black uppercase tracking-widest transition-all ${view === 'history' ? 'text-emerald-500' : 'text-slate-500 hover:text-white'}`}
+                className={`relative px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${view === 'history' ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
               >
-                Archive
-              </button>
+                {t('nav.history', 'Archive')}
+                {view === 'history' && (
+                  <motion.div layoutId="headerNavTabIndicator" className="absolute bottom-0 left-2 right-2 h-0.5 bg-emerald-500 rounded-full" />
+                )}
+              </motion.button>
             </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
             {user ? (
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="hidden sm:block text-right">
+                <motion.button 
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setShowSettingsModal(true)}
+                  className="hidden sm:block text-right cursor-pointer hover:opacity-90 transition-opacity"
+                >
                   <div className="text-[9px] font-black text-white uppercase tracking-tighter leading-none">{user.firstName}</div>
                   <div className={`text-[7px] font-bold uppercase tracking-widest mt-0.5 ${isPremium ? 'text-emerald-500' : 'text-slate-500'}`}>
-                    {isPremium ? 'Premium' : 'Free'}
+                    {isPremium ? t('nav.vipAccess', 'Premium') : t('nav.freeTier', 'Free')}
                   </div>
-                </div>
-                <button 
-                  onClick={() => logout()}
-                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-white/10 overflow-hidden bg-slate-900 flex items-center justify-center p-0.5 touch-target"
+                </motion.button>
+
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowSettingsModal(true)}
+                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-emerald-500/30 overflow-hidden bg-slate-900 flex items-center justify-center p-0.5 touch-target cursor-pointer shadow-[0_0_12px_rgba(16,185,129,0.2)] hover:border-emerald-400 transition-all"
+                  title="Profile & Settings"
                 >
                   {user.photoUrl ? (
                     <img src={user.photoUrl} alt={user.name} className="w-full h-full rounded-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
-                    <User size={14} className="text-slate-500" />
+                    <User size={14} className="text-emerald-400" />
                   )}
-                </button>
+                </motion.button>
               </div>
             ) : (
-              <button 
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setShowLoginModal(true)}
-                className="px-3 py-1.5 bg-slate-900 border border-white/10 text-white rounded-lg text-[9px] font-black uppercase hover:bg-slate-800 transition-all touch-target"
+                className="px-3 py-1.5 bg-slate-900 border border-white/10 text-white rounded-lg text-[9px] font-black uppercase hover:bg-slate-800 transition-all touch-target cursor-pointer"
               >
-                Sign In
-              </button>
+                {t('nav.signIn', 'Sign In')}
+              </motion.button>
             )}
 
             {!isPremium && (
-              <button 
+              <motion.button 
+                whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(16,185,129,0.4)" }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setShowPaymentModal(true)} 
-                className="px-3 py-1.5 bg-emerald-500 text-slate-950 rounded-lg text-[9px] font-black uppercase shadow-lg shadow-emerald-500/20 touch-target"
+                className="px-3 py-1.5 bg-emerald-500 text-slate-950 rounded-lg text-[9px] font-black uppercase shadow-lg shadow-emerald-500/20 touch-target cursor-pointer"
               >
-                UPGRADE
-              </button>
+                {t('nav.upgrade', 'UPGRADE')}
+              </motion.button>
             )}
           </div>
         </motion.header>
@@ -906,15 +950,28 @@ const App: React.FC = () => {
         >
           <div className="px-4 sm:px-8 py-3 sm:py-4 border-b border-white/5 flex items-center gap-3 shrink-0 bg-slate-900/10">
             <Terminal size={12} className="text-emerald-500 sm:w-[16px] sm:h-[16px]" />
-            <span className="text-[8px] sm:text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] sm:tracking-[0.4em]">Betlify Analysis Hub</span>
+            <span className="text-[8px] sm:text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] sm:tracking-[0.4em]">{t('terminal.hubTitle', 'Betlify Analysis Hub')}</span>
           </div>
           
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 sm:space-y-10 custom-scrollbar pb-32">
-            {view === 'dashboard' ? (
-              <>
-                {messages.map((msg, idx) => (
-                  <React.Fragment key={msg.id}>
-                    <div className={`flex gap-3 sm:gap-5 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'} animate-in fade-in slide-in-from-bottom-2`}>
+            <AnimatePresence mode="wait">
+              {view === 'dashboard' ? (
+                <motion.div
+                  key="dashboard-view"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.25 }}
+                  className="space-y-6 sm:space-y-10"
+                >
+                  {messages.map((msg, idx) => (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: Math.min(idx * 0.04, 0.2) }}
+                      className={`flex gap-3 sm:gap-5 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+                    >
                       <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center border shrink-0 overflow-hidden ${msg.role === 'user' ? 'bg-slate-800 border-white/5' : 'bg-emerald-500 border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)] p-1.5'}`}>
                         {msg.role === 'user' ? (
                           <User size={16} className="text-slate-500 sm:w-[20px] sm:h-[20px]" />
@@ -987,25 +1044,40 @@ const App: React.FC = () => {
                           )}
                         </div>
                       </div>
-                    </div>
-                  </React.Fragment>
-                ))}
-                
-                {loading && (
-                  <div className="flex gap-3 sm:gap-5 animate-in fade-in">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-500 flex items-center justify-center p-1.5">
-                      <SmartLoader size={16} className="text-slate-950 sm:w-[20px] sm:h-[20px]" />
-                    </div>
-                    <div className="p-4 sm:p-8 bg-slate-900/40 border border-emerald-500/10 rounded-2xl sm:rounded-[2rem] flex-1 flex flex-col items-center gap-3">
-                      <Cpu size={24} className="text-emerald-400 animate-spin sm:w-[32px] sm:h-[32px]" />
-                      <span className="text-[8px] sm:text-[10px] font-black text-emerald-500 uppercase tracking-widest animate-pulse">Analyzing Market Data...</span>
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <MatchHistory isPremium={isPremium} />
-            )}
+                    </motion.div>
+                  ))}
+                  
+                  {loading && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex gap-3 sm:gap-5"
+                    >
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-500 flex items-center justify-center p-1.5">
+                        <SmartLoader size={16} className="text-slate-950 sm:w-[20px] sm:h-[20px]" />
+                      </div>
+                      <div className="p-4 sm:p-8 bg-slate-900/40 border border-emerald-500/10 rounded-2xl sm:rounded-[2rem] flex-1 flex flex-col items-center gap-3">
+                        <Cpu size={24} className="text-emerald-400 animate-spin sm:w-[32px] sm:h-[32px]" />
+                        <span className="text-[8px] sm:text-[10px] font-black text-emerald-500 uppercase tracking-widest animate-pulse">{t('terminal.analyzingMarket', 'Analyzing Market Data...')}</span>
+                      </div>
+                    </motion.div>
+                  )}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="history-view"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <MatchHistory 
+                    isPremium={isPremium} 
+                    onUnlockPremium={() => setShowPaymentModal(true)} 
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </motion.section>
 
@@ -1019,7 +1091,7 @@ const App: React.FC = () => {
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2.5">
                 <BrainCircuit size={12} className="text-emerald-500 sm:w-[18px] sm:h-[18px]" />
-                <span className="text-[9px] sm:text-[11px] font-black text-white uppercase tracking-[0.2em] sm:tracking-[0.4em] italic">Command Hub</span>
+                <span className="text-[9px] sm:text-[11px] font-black text-white uppercase tracking-[0.2em] sm:tracking-[0.4em] italic">{t('hub.title', 'Command Hub')}</span>
               </div>
               
               {/* User Profile or Error */}
@@ -1032,7 +1104,12 @@ const App: React.FC = () => {
                     <span className="text-[7px] font-black text-red-400 uppercase tracking-widest truncate max-w-[80px]">{error}</span>
                   </div>
                 ) : user ? (
-                  <div className="flex items-center gap-2.5 px-3 py-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                  <motion.button 
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setShowSettingsModal(true)}
+                    className="flex items-center gap-2.5 px-3 py-1.5 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.1)] transition-all cursor-pointer text-left"
+                  >
                     <div className="text-right">
                       <div className="text-[8px] font-black text-white uppercase tracking-tighter leading-none">{user.firstName}</div>
                       {user.username && <div className="text-[7px] font-bold text-emerald-400/60 leading-none mt-0.5">@{user.username}</div>}
@@ -1044,44 +1121,27 @@ const App: React.FC = () => {
                         <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-emerald-400 bg-emerald-500/10">{user.firstName.substring(0, 1)}</div>
                       )}
                     </div>
-                  </div>
+                  </motion.button>
                 ) : (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full">
-                    <AlertTriangle size={10} className="text-slate-500" />
-                    <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Guest Mode</span>
-                  </div>
+                  <motion.button 
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setShowSettingsModal(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full cursor-pointer transition-all"
+                  >
+                    <Globe size={10} className="text-slate-400" />
+                    <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">{t('nav.settings', 'Settings')}</span>
+                  </motion.button>
                 )}
               </div>
             </div>
             
-            {/* Telegram CTA */}
-            <a 
-              href="https://t.me/BetlifyAI" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="block w-full p-5 sm:p-7 bg-gradient-to-r from-blue-600/20 to-blue-900/40 border border-blue-500/30 rounded-[1.5rem] sm:rounded-[2rem] hover:border-blue-400 transition-all group relative overflow-hidden min-h-[80px] flex items-center"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-400/10 blur-3xl rounded-full -mr-16 -mt-16" />
-              <div className="relative z-10 flex items-center justify-between w-full">
-                <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                    <Send size={22} className="text-white" />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-[8px] sm:text-[9px] font-black text-blue-300 uppercase tracking-widest leading-none mb-1.5">JOIN THE NETWORK</div>
-                    <div className="text-sm sm:text-base font-black text-white italic uppercase tracking-tighter">TELEGRAM CHANNEL</div>
-                  </div>
-                </div>
-                <div className="p-2 bg-white/10 rounded-full text-white group-hover:translate-x-1 transition-transform">
-                  <ChevronRight size={16} />
-                </div>
-              </div>
-            </a>
+
 
             <button onClick={() => setShowChatInput(!showChatInput)} className={`w-full p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] border transition-all flex items-center justify-between group shadow-xl min-h-[80px] ${showChatInput ? 'bg-emerald-500/10 border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.25)]' : 'bg-slate-900 border-white/5 hover:border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.15)]'}`}>
                <div className="flex items-center gap-4 sm:gap-5 relative z-10">
                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-slate-950 border flex items-center justify-center ${showChatInput ? 'border-emerald-500/50' : 'border-white/5'}`}><Cpu className={showChatInput ? 'text-emerald-400' : 'text-slate-600'} size={20} /></div>
-                 <div className="text-left"><span className="text-[8px] sm:text-[10px] font-black text-amber-400 uppercase tracking-widest leading-none block mb-1.5 drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]">PREMIUM SCAN</span><span className="text-sm sm:text-base font-black text-white italic uppercase tracking-tighter block">Expert Picks & Commands</span></div>
+                 <div className="text-left"><span className="text-[8px] sm:text-[10px] font-black text-amber-400 uppercase tracking-widest leading-none block mb-1.5 drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]">{t('hub.premiumScan', 'PREMIUM SCAN')}</span><span className="text-sm sm:text-base font-black text-white italic uppercase tracking-tighter block">{t('hub.expertPicks', 'Expert Picks & Commands')}</span></div>
                </div>
                <div className={`p-1.5 rounded-full ${showChatInput ? 'bg-emerald-500 text-slate-950' : 'bg-white/5 text-slate-500'}`}><ChevronRight size={16} className={showChatInput ? 'rotate-90' : ''} /></div>
             </button>
@@ -1098,29 +1158,22 @@ const App: React.FC = () => {
                 }} 
               />
             )}
-
-            <PerformanceTracker 
-              premiumHistory={premiumHistory}
-              isLoading={isInitialLoading}
-              isPremium={isPremium}
-              onUnlockPremium={() => setShowPaymentModal(true)}
-            />
           </div>
 
           <div className="space-y-4 sm:space-y-6">
               {/* Alpha Signals Header */}
-             <div className="flex flex-col gap-1 px-1">
-               <div className="flex items-center justify-between w-full">
-                 <div className="flex items-center gap-3">
-                   <Zap size={14} className="text-emerald-400 sm:w-[20px] sm:h-[20px]" />
-                   <span className="text-[10px] sm:text-[12px] font-black text-white uppercase tracking-[0.2em] sm:tracking-[0.4em] italic">🎯 Daily Free Picks</span>
-                 </div>
-                 <span className="text-[8px] font-black text-emerald-500 animate-pulse">LIVE SYNC</span>
-               </div>
-               <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block mt-1 pl-[26px] sm:pl-[32px]">
-                 FREE EXPERT AND AI-DRIVEN PREDICTIONS EVERY DAY.
-               </span>
-             </div>
+              <div className="flex flex-col gap-1 px-1">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-3">
+                    <Zap size={14} className="text-emerald-400 sm:w-[20px] sm:h-[20px]" />
+                    <span className="text-[10px] sm:text-[12px] font-black text-white uppercase tracking-[0.2em] sm:tracking-[0.4em] italic">🎯 {t('card.freePicksTitle', 'Daily Free Picks')}</span>
+                  </div>
+                  <span className="text-[8px] font-black text-emerald-500 animate-pulse">{t('hub.liveSync', 'LIVE SYNC')}</span>
+                </div>
+                <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block mt-1 pl-[26px] sm:pl-[32px]">
+                  {t('hub.freePredictionsSub', 'FREE EXPERT AND AI-DRIVEN PREDICTIONS EVERY DAY.')}
+                </span>
+              </div>
 
              {freePicks.length > 0 ? (
                <div className="grid grid-cols-1 gap-4">
@@ -1148,7 +1201,7 @@ const App: React.FC = () => {
                          </div>
                        </div>
                        <div className="text-right">
-                         <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1.5">Confidence</div>
+                         <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1.5">{t('card.confidence', 'Confidence')}</div>
                          <div className="text-sm font-black text-emerald-400 italic leading-none">{pick.confidence}</div>
                        </div>
                      </div>
@@ -1192,7 +1245,7 @@ const App: React.FC = () => {
               className={`flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all duration-300 touch-target ${activeTab === 'terminal' && view === 'dashboard' ? 'text-emerald-500' : 'text-slate-500'}`}
             >
               <Terminal size={20} className={activeTab === 'terminal' && view === 'dashboard' ? 'scale-110' : ''} />
-              <span className="text-[8px] font-black uppercase tracking-tighter">Analysis</span>
+              <span className="text-[8px] font-black uppercase tracking-tighter">{t('nav.terminal', 'Analysis')}</span>
               {activeTab === 'terminal' && view === 'dashboard' && <motion.div layoutId="nav-indicator" className="w-1 h-1 rounded-full bg-emerald-500 mt-0.5" />}
             </button>
             <button 
@@ -1200,7 +1253,7 @@ const App: React.FC = () => {
               className={`flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all duration-300 touch-target ${activeTab === 'terminal' && view === 'history' ? 'text-emerald-500' : 'text-slate-500'}`}
             >
               <History size={20} className={activeTab === 'terminal' && view === 'history' ? 'scale-110' : ''} />
-              <span className="text-[8px] font-black uppercase tracking-tighter">Archive</span>
+              <span className="text-[8px] font-black uppercase tracking-tighter">{t('nav.history', 'Archive')}</span>
               {activeTab === 'terminal' && view === 'history' && <motion.div layoutId="nav-indicator" className="w-1 h-1 rounded-full bg-emerald-500 mt-0.5" />}
             </button>
             <button 
@@ -1208,7 +1261,7 @@ const App: React.FC = () => {
               className={`flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all duration-300 touch-target ${activeTab === 'command' ? 'text-emerald-500' : 'text-slate-500'}`}
             >
               <LayoutDashboard size={20} className={activeTab === 'command' ? 'scale-110' : ''} />
-              <span className="text-[8px] font-black uppercase tracking-tighter">Command</span>
+              <span className="text-[8px] font-black uppercase tracking-tighter">{t('nav.command', 'Command')}</span>
               {activeTab === 'command' && <motion.div layoutId="nav-indicator" className="w-1 h-1 rounded-full bg-emerald-500 mt-0.5" />}
             </button>
           </div>
